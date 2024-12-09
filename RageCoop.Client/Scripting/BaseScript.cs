@@ -42,11 +42,16 @@ namespace RageCoop.Client.Scripting
                         {
                             unsafe
                             {
-                                int weather1 = default(int);
-                                int weather2 = default(int);
-                                float percent2 = default(float);
+                                int weather1 = default;
+                                int weather2 = default;
+                                float percent2 = default;
                                 Function.Call(Hash.GET_CURR_WEATHER_STATE, &weather1, &weather2, &percent2);
-                                API.SendCustomEvent(CustomEvents.WeatherTimeSync, GTA.Chrono.GameClock.Hour, GTA.Chrono.GameClock.Minute, GTA.Chrono.GameClock.Second, weather1, weather2, percent2);
+                                float windspeed = Function.Call<float>(Hash.GET_WIND_SPEED);
+                                Vector3 winddirVector = Function.Call<Vector3>(Hash.GET_WIND_DIRECTION);
+                                float windAngle = (float)Math.Atan2(winddirVector.X, winddirVector.Y);  // Radians
+                                API.SendCustomEvent(CustomEvents.WeatherTimeSync, GTA.Chrono.GameClock.Hour, GTA.Chrono.GameClock.Minute, GTA.Chrono.GameClock.Second, 
+                                                                                  weather1, weather2, percent2, 
+                                                                                  windspeed, windAngle );
                             }
                         });
                     }
@@ -62,6 +67,14 @@ namespace RageCoop.Client.Scripting
             GTA.Chrono.GameClock.Minute = (int)e.Args[1];
             GTA.Chrono.GameClock.Second = (int)e.Args[2];
             Function.Call(Hash.SET_CURR_WEATHER_STATE, (int)e.Args[3], (int)e.Args[4], (float)e.Args[5]);
+            Function.Call(Hash.SET_WIND_SPEED, (float)e.Args[6]);
+            // SET_WIND_DIRECTION doesn't like negative values
+            float windDir = (float)e.Args[7];
+            if (windDir < 0)
+            {
+                windDir += (float)(2.0f * Math.PI);
+            }
+            Function.Call(Hash.SET_WIND_DIRECTION, windDir);
         }
 
         private void SetDisplayNameTag(CustomEventReceivedArgs e)

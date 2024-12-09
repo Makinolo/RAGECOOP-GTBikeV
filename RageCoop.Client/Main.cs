@@ -2,6 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 using RageCoop.Client.Menus;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,6 @@ namespace RageCoop.Client
     /// </summary>
     internal class Main : Script
     {
-        private bool _gameLoaded = false;
         internal static Version Version = typeof(Main).Assembly.GetName().Version;
 
         internal static int LocalPlayerID = 0;
@@ -29,8 +29,6 @@ namespace RageCoop.Client
         internal static new Settings Settings = null;
         internal static Scripting.BaseScript BaseScript = new Scripting.BaseScript();
 
-#if !NON_INTERACTIVE
-#endif
         internal static Chat MainChat = null;
         internal static Stopwatch Counter = new Stopwatch();
         internal static Logger Logger = null;
@@ -69,33 +67,18 @@ namespace RageCoop.Client
 #endif
             };
             Resources = new Scripting.Resources();
-            if (Game.Version < GameVersion.v1_0_1290_1_Steam)
-            {
-                Tick += (object sender, EventArgs e) =>
-                {
-                    if (Game.IsLoading)
-                    {
-                        return;
-                    }
-                    if (!_gameLoaded)
-                    {
-                        GTA.UI.Notification.PostTicker("~r~Please update your GTA5 to v1.0.1290 or newer!", true);
-                        _gameLoaded = true;
-                    }
-                };
-                return;
-            }
+
             BaseScript.OnStart();
             SyncedPedsGroup = World.AddRelationshipGroup("SYNCPED");
             Game.Player.Character.RelationshipGroup.SetRelationshipBetweenGroups(SyncedPedsGroup, Relationship.Neutral, true);
-#if !NON_INTERACTIVE
-#endif
+
             MainChat = new Chat();
             Tick += OnTick;
             Tick += (s, e) => { Scripting.API.Events.InvokeTick(); };
             KeyDown += OnKeyDown;
             KeyDown += (s, e) => { Scripting.API.Events.InvokeKeyDown(s, e); };
             KeyUp += (s, e) => { Scripting.API.Events.InvokeKeyUp(s, e); };
+
             Aborted += (object sender, EventArgs e) => Disconnected("Abort");
 
             Util.NativeMemory();
@@ -114,17 +97,15 @@ namespace RageCoop.Client
             {
                 return;
             }
+#if !NON_INTERACTIVE
             else if (!_gameLoaded && (_gameLoaded = true))
             {
-#if !NON_INTERACTIVE
+
                 GTA.UI.Notification.PostMessageText($"Press ~g~{Settings.MenuKey}~s~ to open the menu.", new GTA.Graphics.TextureAsset("CHAR_ALL_PLAYERS_CONF", "CHAR_ALL_PLAYERS_CONF"), false, GTA.UI.FeedTextIcon.Message, "RAGECOOP", "Welcome!");
-#endif
             }
 
-#if !NON_INTERACTIVE
             CoopMenu.MenuPool.Process();
 #endif
-
 
             DoQueuedActions();
             if (!Networking.IsOnServer)
@@ -223,6 +204,7 @@ namespace RageCoop.Client
             }
             if (e.KeyCode == Settings.MenuKey)
             {
+#if !NON_INTERACTIVE
                 if (CoopMenu.MenuPool.AreAnyVisible)
                 {
                     CoopMenu.MenuPool.ForEach<LemonUI.Menus.NativeMenu>(x =>
@@ -238,6 +220,7 @@ namespace RageCoop.Client
                 {
                     CoopMenu.LastMenu.Visible = true;
                 }
+#endif
             }
             else if (Game.IsControlJustPressed(GTA.Control.MpTextChatAll))
             {
@@ -302,20 +285,23 @@ namespace RageCoop.Client
             {
                 WorldThread.Traffic(!Settings.DisableTraffic);
                 Function.Call(Hash.SET_ENABLE_VEHICLE_SLIPSTREAMING, true);
+                API.Events.InvokeLocalConnection();
+#if !NON_INTERACTIVE
                 CoopMenu.ConnectedMenuSetting();
-                MainChat.Init();
                 GTA.UI.Notification.PostTicker("~g~Connected!", false);
+#endif
+                MainChat.Init();
             });
 
             Logger.Info(">> Connected <<");
         }
         public static void Disconnected(string reason)
         {
-
-
             Logger.Info($">> Disconnected << reason: {reason}");
+
             QueueAction(() =>
             {
+                API.Events.InvokeLocalDisconnection(reason);
                 if (MainChat.Focused)
                 {
                     MainChat.Focused = false;
@@ -325,9 +311,11 @@ namespace RageCoop.Client
                 EntityPool.Cleanup();
                 WorldThread.Traffic(true);
                 Function.Call(Hash.SET_ENABLE_VEHICLE_SLIPSTREAMING, false);
+#if !NON_INTERACTIVE
                 CoopMenu.DisconnectedMenuSetting();
                 if (reason != "Abort")
                     GTA.UI.Notification.PostTicker("~r~Disconnected: " + reason, false);
+#endif
                 LocalPlayerID = default;
             });
             Memory.RestorePatches();

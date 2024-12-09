@@ -2,6 +2,7 @@
 using GTA;
 using Newtonsoft.Json;
 using RageCoop.Core;
+using RageCoop.Core.Scripting;
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
@@ -11,17 +12,10 @@ namespace RageCoop.Client.Scripting
     /// <summary>
     /// 
     /// </summary>
-    public class CustomEventReceivedArgs : EventArgs
+    public class ClientCustomEventReceivedArgs : CustomEventReceivedArgs
     {
-        /// <summary>
-        /// The event hash
-        /// </summary>
-        public int Hash { get; set; }
-        /// <summary>
-        /// Supported types: byte, short, ushort, int, uint, long, ulong, float, bool, string, Vector3, Quaternion
-        /// </summary>
-        public object[] Args { get; set; }
     }
+
     /// <summary>
     /// Provides vital functionality to interact with RAGECOOP
     /// </summary>
@@ -87,7 +81,27 @@ namespace RageCoop.Client.Scripting
             /// <param name="hash"></param>
             /// <param name="args"></param>
             public delegate void CustomEvent(int hash, List<object> args);
-            #endregion
+
+            /// <summary>
+            /// There is a connection happening
+            /// </summary>
+            public static event EventHandler<Player> OnPlayerConnected;
+
+            /// <summary>
+            /// There is a disconnection happening
+            /// </summary>
+            public static event EventHandler<Player> OnPlayerDisconnected;
+
+            /// <summary>
+            /// There is a connection happening
+            /// </summary>
+            public static event EventHandler OnLocalPlayerConnected;
+
+            /// <summary>
+            /// There is a disconnection happening
+            /// </summary>
+            public static event EventHandler<string> OnLocalPlayerDisconnected;
+
             /// <summary>
             /// The local player is dead
             /// </summary>
@@ -128,7 +142,13 @@ namespace RageCoop.Client.Scripting
             /// </summary>
             public static KeyEventHandler OnKeyUp;
 
+            #endregion
             #region INVOKE
+
+            internal static void InvokeConnection(Player p) { OnPlayerConnected?.Invoke(null, p); }
+            internal static void InvokeDisconnection(Player p) { OnPlayerDisconnected?.Invoke(null, p); }
+            internal static void InvokeLocalConnection() { OnLocalPlayerConnected?.Invoke(null, null); }
+            internal static void InvokeLocalDisconnection(string reason) { OnLocalPlayerDisconnected?.Invoke(null, reason); }
             internal static void InvokeVehicleSpawned(SyncedVehicle v) { OnVehicleSpawned?.Invoke(null, v); }
             internal static void InvokeVehicleDeleted(SyncedVehicle v) { OnVehicleDeleted?.Invoke(null, v); }
             internal static void InvokePedSpawned(SyncedPed p) { OnPedSpawned?.Invoke(null, p); }
@@ -142,7 +162,7 @@ namespace RageCoop.Client.Scripting
 
             internal static void InvokeCustomEventReceived(Packets.CustomEvent p)
             {
-                var args = new CustomEventReceivedArgs() { Hash = p.Hash, Args = p.Args };
+                var args = new ClientCustomEventReceivedArgs() { Hash = p.Hash, Args = p.Args };
 
                 // Main.Logger.Debug($"CustomEvent:\n"+args.Args.DumpWithType());
 

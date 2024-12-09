@@ -1,10 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace RageCoop.Core.Scripting
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    public abstract class CustomEventReceivedArgs : EventArgs
+    {
+        /// <summary>
+        /// The event hash
+        /// </summary>
+        public int Hash { get; set; }
+
+        /// <summary>
+        /// Supported types: byte, short, ushort, int, uint, long, ulong, float, bool, string, Vector3, Quaternion, Vector2, byte[] and int[]
+        /// </summary>
+        public object[] Args { get; set; }
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -55,6 +73,120 @@ namespace RageCoop.Core.Scripting
                 Hashed.Add(hash, s);
                 return hash;
             }
+        }
+    }
+
+    /// <summary>
+    /// Decorator attribute to exclude properties in the message class from being serialized
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+    public class NoSerialize : Attribute { }
+
+    /// <summary>
+    /// CustomEventMessage is a base abstract class that Custom event messages
+    /// can inherit from to automate the serialization of their properties and
+    /// fields using introspection.
+    /// The properties and fields not intended to be serialized in the message
+    /// can be decorated with NoSerialize.
+    /// The serialization can't be tailored based on flags like for internal
+    /// packets.
+    /// </summary>
+    public abstract class CustomEventMessage
+    {
+        /// <summary>
+        /// Constructor that populates the event message with the contents of custom 
+        /// received arguments coming from a packet
+        /// </summary>
+        public CustomEventMessage(CustomEventReceivedArgs cera)
+        {
+            if (cera.Hash == GetMessageHash())
+            {
+                FromCustomEventArgs(cera.Args);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Trying to create a new CustomEventMessage ({this.GetType().Name}) with the wrong message hash ({cera.Hash})");
+            }
+        }
+
+        /// <summary>
+        /// Constructor for an empty message
+        /// </summary>
+        public CustomEventMessage()
+        {
+        }
+
+        /// <summary>
+        /// Converts the message in an object array that is ready to be sent as a 
+        /// custom event
+        /// </summary>
+        public object[] ToCustomEventArgs()
+        {
+            List<object> args = new List<object>();
+
+            var myClassType = this.GetType();
+            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                            .Where(m =>
+                                    (m.MemberType == MemberTypes.Property || m.MemberType == MemberTypes.Field) &&
+                                    !m.GetCustomAttributes(typeof(NoSerialize), false).Any()
+                                );
+
+            foreach (var member in members)
+            {
+                object value = null;
+
+                if (member.MemberType == MemberTypes.Property)
+                {
+                    value = ((PropertyInfo)member).GetValue(this);
+                }
+                else if (member.MemberType == MemberTypes.Field)
+                {
+                    value = ((FieldInfo)member).GetValue(this);
+                }
+
+                if (value != null)
+                {
+                    args.Add(value);
+                }
+            }
+
+            return args.ToArray();
+        }
+
+        /// <summary>
+        /// Gets the object array received in a custom event packet and populates the 
+        /// message class properties and fields.
+        /// </summary>
+        public void FromCustomEventArgs(object[] args)
+        {
+            var myClassType = this.GetType();
+            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                            .Where(m =>
+                                    (m.MemberType == MemberTypes.Property || m.MemberType == MemberTypes.Field) &&
+                                    !m.GetCustomAttributes(typeof(NoSerialize), false).Any()
+                                );
+            int counter = 0;
+            foreach (var member in members)
+            {
+                object value = args[counter];
+                if (member.MemberType == MemberTypes.Property)
+                {
+                    ((PropertyInfo)member).SetValue(this, value);
+                }
+                else if (member.MemberType == MemberTypes.Field)
+                {
+                    ((FieldInfo)member).SetValue(this, value);
+                }
+                counter++;
+            }
+        }
+
+        /// <summary>
+        /// Creates a Hash for the message based on the type name
+        /// </summary>
+        public int GetMessageHash()
+        {
+            return CustomEvents.Hash(this.GetType().FullName);
         }
     }
 }

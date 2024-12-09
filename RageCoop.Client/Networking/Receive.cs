@@ -153,7 +153,7 @@ namespace RageCoop.Client
 #if DEBUG
                             Main.QueueAction(() =>
                             {
-                                GTA.UI.Notification.Show($"~r~~h~Packet Error {ex.Message}");
+                                GTA.UI.Notification.PostTicker($"~r~~h~Packet Error {ex.Message}", false);
                                 return true;
                             });
                             Main.Logger.Error($"[{packetType}] {ex.Message}");

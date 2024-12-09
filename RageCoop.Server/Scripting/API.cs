@@ -21,7 +21,7 @@ namespace RageCoop.Server.Scripting
             Server = server;
         }
         #region INTERNAL
-        internal Dictionary<int, List<Action<CustomEventReceivedArgs>>> CustomEventHandlers = new();
+        internal Dictionary<int, List<Action<ServerCustomEventReceivedArgs>>> CustomEventHandlers = new();
         #endregion
         /// <summary>
         /// Invoked when a chat message is received.
@@ -116,8 +116,8 @@ namespace RageCoop.Server.Scripting
 
         internal void InvokeCustomEventReceived(Packets.CustomEvent p, Client sender)
         {
-            var args = new CustomEventReceivedArgs() { Hash = p.Hash, Args = p.Args, Client = sender };
-            if (CustomEventHandlers.TryGetValue(p.Hash, out List<Action<CustomEventReceivedArgs>> handlers))
+            var args = new ServerCustomEventReceivedArgs() { Hash = p.Hash, Args = p.Args, Client = sender };
+            if (CustomEventHandlers.TryGetValue(p.Hash, out List<Action<ServerCustomEventReceivedArgs>> handlers))
             {
                 handlers.ForEach((x) => { x.Invoke(args); });
             }
@@ -191,6 +191,17 @@ namespace RageCoop.Server.Scripting
         public Client GetClientByUsername(string username)
         {
             Server.ClientsByName.TryGetValue(username, out Client c);
+            return c;
+        }
+
+        /// <summary>
+        /// Get the client by its id
+        /// </summary>
+        /// <param name="id">The id to search for</param>
+        /// <returns>The Client from this user or null</returns>
+        public Client GetClientByID(int id)
+        {
+            Server.ClientsByID.TryGetValue(id, out Client c);
             return c;
         }
 
@@ -352,13 +363,13 @@ namespace RageCoop.Server.Scripting
         /// </summary>
         /// <param name="hash">An unique identifier of the event, you can hash your event name with <see cref="CustomEvents.Hash(string)"/></param>
         /// <param name="handler">An handler to be invoked when the event is received from the server.</param>
-        public void RegisterCustomEventHandler(int hash, Action<CustomEventReceivedArgs> handler)
+        public void RegisterCustomEventHandler(int hash, Action<ServerCustomEventReceivedArgs> handler)
         {
             lock (Events.CustomEventHandlers)
             {
-                if (!Events.CustomEventHandlers.TryGetValue(hash, out List<Action<CustomEventReceivedArgs>> handlers))
+                if (!Events.CustomEventHandlers.TryGetValue(hash, out List<Action<ServerCustomEventReceivedArgs>> handlers))
                 {
-                    Events.CustomEventHandlers.Add(hash, handlers = new List<Action<CustomEventReceivedArgs>>());
+                    Events.CustomEventHandlers.Add(hash, handlers = new List<Action<ServerCustomEventReceivedArgs>>());
                 }
                 handlers.Add(handler);
             }

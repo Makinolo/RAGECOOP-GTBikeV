@@ -58,8 +58,8 @@ namespace RageCoop.Client
                     PingInterval = 5
                 };
 #if DEBUG
-                config.SimulatedMinimumLatency = SimulatedLatency;
-                config.SimulatedRandomLatency = 0;
+                //config.SimulatedMinimumLatency = SimulatedLatency;
+                //config.SimulatedRandomLatency = 0;
 #endif
                 config.EnableMessageType(NetIncomingMessageType.UnconnectedData);
                 config.EnableMessageType(NetIncomingMessageType.NatIntroductionSuccess);
@@ -156,20 +156,24 @@ namespace RageCoop.Client
                 Username = packet.Username,
             };
             PlayerList.SetPlayer(packet.PedID, packet.Username);
-
+            Scripting.API.Events.InvokeConnection(p);
             Main.Logger.Debug($"player connected:{p.Username}");
-            Main.QueueAction(() =>
-            Notification.PostTicker($"~h~{p.Username}~h~ connected.", false));
+#if !NON_INTERACTIVE
+            Main.QueueAction(() =>  Notification.PostTicker($"~h~{p.Username}~h~ connected.", false));
+#endif
         }
         private static void PlayerDisconnect(Packets.PlayerDisconnect packet)
         {
             var player = PlayerList.GetPlayer(packet.PedID);
             if (player == null) { return; }
+            Scripting.API.Events.InvokeDisconnection(player);
             PlayerList.RemovePlayer(packet.PedID);
             Main.QueueAction(() =>
             {
                 EntityPool.RemoveAllFromPlayer(packet.PedID);
+#if !NON_INTERACTIVE
                 Notification.PostTicker($"~h~{player.Username}~h~ left.", false);
+#endif
             });
         }
 

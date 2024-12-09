@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using RageCoop.Core.Scripting;
+using System;
 using System.Net;
 
 namespace RageCoop.Server.Scripting
@@ -26,22 +26,12 @@ namespace RageCoop.Server.Scripting
     /// <summary>
     /// 
     /// </summary>
-    public class CustomEventReceivedArgs : EventArgs
+    public class ServerCustomEventReceivedArgs : CustomEventReceivedArgs
     {
         /// <summary>
         /// The <see cref="RageCoop.Server.Client"/> that triggered this event
         /// </summary>
         public Client Client { get; set; }
-
-        /// <summary>
-        /// The event hash
-        /// </summary>
-        public int Hash { get; set; }
-
-        /// <summary>
-        /// Supported types: byte, short, ushort, int, uint, long, ulong, float, bool, string, Vector3, Quaternion, Vector2 <see cref="ServerObject.Handle"/>
-        /// </summary>
-        public object[] Args { get; set; }
     }
     /// <summary>
     /// 

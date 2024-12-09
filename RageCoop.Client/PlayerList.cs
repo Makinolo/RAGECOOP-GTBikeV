@@ -17,7 +17,7 @@ namespace RageCoop.Client
         private static ulong _lastUpdate = Util.GetTickCount64();
         public static ulong Pressed { get; set; }
 
-        public static bool LeftAlign = true;
+        public static bool LeftAlign => !Main.Settings.FlipMenu;
         public static Dictionary<int, Player> Players = new Dictionary<int, Player> { };
         public static void Tick()
         {

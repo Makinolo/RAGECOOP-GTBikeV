@@ -73,7 +73,7 @@ namespace RageCoop.Server.Scripting
             }
         }
 
-        private void NativeResponse(CustomEventReceivedArgs e)
+        private void NativeResponse(ServerCustomEventReceivedArgs e)
         {
             try
             {

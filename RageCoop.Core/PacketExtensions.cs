@@ -40,6 +40,16 @@ namespace RageCoop.Core
         {
             return m.ReadBytes(m.ReadInt32());
         }
+        public static int[] ReadIntArray(this NetIncomingMessage m)
+        {
+            int len = m.ReadInt32();
+            int[] ints = new int[len];
+            for (int i = 0; i<len; i++)
+            {
+                ints[i] = m.ReadInt32();
+            }
+            return ints;
+        }
         #endregion
 
         #region MESSAGE-WRITE
@@ -60,6 +70,14 @@ namespace RageCoop.Core
         {
             m.Write(b.Length);
             m.Write(b);
+        }
+        public static void WriteIntArray(this NetOutgoingMessage m, int[] ints)
+        {
+            m.Write(ints.Length);
+            foreach (int i in ints)
+            {
+                m.Write(i);
+            }
         }
         #endregion
 

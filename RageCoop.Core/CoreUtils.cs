@@ -57,22 +57,76 @@ namespace RageCoop.Core
                 case bool value:
                     m.Write((byte)0x09); m.Write(value); break;
                 case string value:
-                    m.Write((byte)0x10); m.Write(value); break;
+                    m.Write((byte)0x0A); m.Write(value); break;
                 case Vector3 value:
-                    m.Write((byte)0x11); m.Write(value); break;
+                    m.Write((byte)0x0B); m.Write(value); break;
                 case Quaternion value:
-                    m.Write((byte)0x12); m.Write(value); break;
+                    m.Write((byte)0x0C); m.Write(value); break;
                 case GTA.Model value:
-                    m.Write((byte)0x13); m.Write(value); break;
+                    m.Write((byte)0x0D); m.Write(value); break;
                 case Vector2 value:
-                    m.Write((byte)0x14); m.Write(value); break;
+                    m.Write((byte)0x0E); m.Write(value); break;
                 case byte[] value:
-                    m.Write((byte)0x15); m.WriteByteArray(value); break;
+                    m.Write((byte)0x0F); m.WriteByteArray(value); break;
+                case int[] value:
+                    m.Write((byte)0x10); m.WriteIntArray(value); break;
                 case Tuple<byte, byte[]> value:
                     m.Write(value.Item1); m.Write(value.Item2); break;
                 default:
                     throw new Exception("Unsupported object type: " + obj.GetType());
             }
+        }
+
+        public static object GetObjectFromBytes(NetIncomingMessage m, Func<byte, NetIncomingMessage, object> resolver)
+        {
+            object obj = null;
+            byte type = m.ReadByte();
+            switch (type)
+            {
+                case 0x01:
+                    obj = m.ReadByte(); break;
+                case 0x02:
+                    obj = m.ReadInt32(); break;
+                case 0x03:
+                    obj = m.ReadUInt16(); break;
+                case 0x04:
+                    obj = m.ReadInt32(); break;
+                case 0x05:
+                    obj = m.ReadUInt32(); break;
+                case 0x06:
+                    obj = m.ReadInt64(); break;
+                case 0x07:
+                    obj = m.ReadUInt64(); break;
+                case 0x08:
+                    obj = m.ReadFloat(); break;
+                case 0x09:
+                    obj = m.ReadBoolean(); break;
+                case 0x0A:
+                    obj = m.ReadString(); break;
+                case 0x0B:
+                    obj = m.ReadVector3(); break;
+                case 0x0C:
+                    obj = m.ReadQuaternion(); break;
+                case 0x0D:
+                    obj = (GTA.Model)m.ReadInt32(); break;
+                case 0x0E:
+                    obj = m.ReadVector2(); break;
+                case 0x0F:
+                    obj = m.ReadByteArray(); break;
+                case 0x10:
+                    obj = m.ReadIntArray(); break;
+                default:
+                    if (resolver == null)
+                    {
+                        throw new InvalidOperationException($"Unexpected type: {type}");
+                    }
+                    else
+                    {
+                        obj = resolver(type, m); break;
+                    }
+            }
+
+            return obj;
         }
         public static IPEndPoint StringToEndPoint(string endpointstring)
         {
