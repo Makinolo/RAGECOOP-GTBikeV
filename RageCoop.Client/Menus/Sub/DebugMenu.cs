@@ -1,6 +1,7 @@
 ﻿#if DEBUG
 using GTA;
 using LemonUI.Menus;
+using RageCoop.Client.Scripting;
 using System;
 using System.Drawing;
 
@@ -11,12 +12,12 @@ namespace RageCoop.Client
         public static NativeMenu Menu = new NativeMenu("RAGECOOP", "Debug", "Debug settings")
         {
             UseMouse = false,
-            Alignment = Main.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
+            Alignment = API.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
         };
         public static NativeMenu DiagnosticMenu = new NativeMenu("RAGECOOP", "Diagnostic", "Performence and Diagnostic")
         {
             UseMouse = false,
-            Alignment = Main.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
+            Alignment = API.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
         };
         public static NativeItem SimulatedLatencyItem = new NativeItem("Simulated network latency", "Simulated network latency in ms (one way)", "0");
         public static NativeCheckboxItem ShowOwnerItem = new NativeCheckboxItem("Show entity owner", "Show the owner name of the entity you're aiming at", false);
@@ -46,7 +47,7 @@ namespace RageCoop.Client
                 catch (Exception ex) { Main.Logger.Error(ex); }
             };
             ShowNetworkInfoItem.CheckboxChanged += (s, e) => { Networking.ShowNetworkInfo = ShowNetworkInfoItem.Checked; };
-            ShowOwnerItem.CheckboxChanged += (s, e) => { Main.Settings.ShowEntityOwnerName = ShowOwnerItem.Checked; Util.SaveSettings(); };
+            ShowOwnerItem.CheckboxChanged += (s, e) => { API.Settings.ShowEntityOwnerName = ShowOwnerItem.Checked; Util.SaveSettings(); };
             Menu.Add(SimulatedLatencyItem);
             Menu.Add(ShowNetworkInfoItem);
             Menu.Add(ShowOwnerItem);

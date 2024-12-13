@@ -1,5 +1,6 @@
 ﻿using GTA;
 using GTA.Native;
+using RageCoop.Client.Scripting;
 using System;
 
 namespace RageCoop.Client
@@ -32,7 +33,7 @@ namespace RageCoop.Client
 
             Game.DisableControlThisFrame(Control.FrontendPause);
 
-            if (Main.Settings.DisableAlternatePause)
+            if (API.Settings.DisableAlternatePause)
             {
                 Game.DisableControlThisFrame(Control.FrontendPauseAlternate);
             }
@@ -40,7 +41,7 @@ namespace RageCoop.Client
             // Values of 2.0 or more make for very aggressive waves like you see during a thunderstorm.
             Function.Call(Hash.SET_DEEP_OCEAN_SCALER, 0.0f); // Works only ~200 meters around the player
 
-            if (Main.Settings.ShowEntityOwnerName)
+            if (API.Settings.ShowEntityOwnerName)
             {
                 unsafe
                 {

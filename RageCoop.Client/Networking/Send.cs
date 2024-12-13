@@ -2,6 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 using Lidgren.Network;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
@@ -90,9 +91,9 @@ namespace RageCoop.Client
                 Blip b;
                 if (sp.IsPlayer)
                 {
-                    p.BlipColor = Scripting.API.Config.BlipColor;
-                    p.BlipSprite = Scripting.API.Config.BlipSprite;
-                    p.BlipScale = Scripting.API.Config.BlipScale;
+                    p.BlipColor = Scripting.API.Settings.BlipColor;
+                    p.BlipSprite = Scripting.API.Settings.BlipSprite;
+                    p.BlipScale = Scripting.API.Settings.BlipScale;
                 }
                 else if ((b = ped.AttachedBlip) != null)
                 {
@@ -196,7 +197,7 @@ namespace RageCoop.Client
         public static void SendChatMessage(string message)
         {
             Peer.SendTo(new Packets.ChatMessage(new Func<string, byte[]>((s) => Security.Encrypt(s.GetBytes())))
-            { Username = Main.Settings.Username, Message = message }, ServerConnection, ConnectionChannel.Chat, NetDeliveryMethod.ReliableOrdered);
+            { Username = API.Settings.Username, Message = message }, ServerConnection, ConnectionChannel.Chat, NetDeliveryMethod.ReliableOrdered);
             Peer.FlushSendQueue();
         }
         public static void SendVoiceMessage(byte[] buffer, int recorded)

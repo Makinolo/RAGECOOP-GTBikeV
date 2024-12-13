@@ -1,5 +1,6 @@
 ﻿using GTA.UI;
 using Lidgren.Network;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
@@ -46,8 +47,8 @@ namespace RageCoop.Client
                 Peer?.Dispose();
 
                 IsConnecting = true;
-                password = password ?? Main.Settings.Password;
-                username = username ?? Main.Settings.Username;
+                password = password ?? API.Settings.Password;
+                username = username ?? API.Settings.Username;
 
                 // 623c92c287cc392406e7aaaac1c0f3b0 = RAGECOOP
                 NetPeerConfiguration config = new NetPeerConfiguration("623c92c287cc392406e7aaaac1c0f3b0")
@@ -156,11 +157,12 @@ namespace RageCoop.Client
                 Username = packet.Username,
             };
             PlayerList.SetPlayer(packet.PedID, packet.Username);
-            Scripting.API.Events.InvokeConnection(p);
+            API.Events.InvokeConnection(p);
             Main.Logger.Debug($"player connected:{p.Username}");
-#if !NON_INTERACTIVE
-            Main.QueueAction(() =>  Notification.PostTicker($"~h~{p.Username}~h~ connected.", false));
-#endif
+            if (API.Settings.Interactive)
+            {
+              Main.QueueAction(() =>  Notification.PostTicker($"~h~{p.Username}~h~ connected.", false));
+            }
         }
         private static void PlayerDisconnect(Packets.PlayerDisconnect packet)
         {
@@ -171,9 +173,10 @@ namespace RageCoop.Client
             Main.QueueAction(() =>
             {
                 EntityPool.RemoveAllFromPlayer(packet.PedID);
-#if !NON_INTERACTIVE
-                Notification.PostTicker($"~h~{player.Username}~h~ left.", false);
-#endif
+                if (API.Settings.Interactive)
+                {
+                    Notification.PostTicker($"~h~{player.Username}~h~ left.", false);
+                }
             });
         }
 

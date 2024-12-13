@@ -27,44 +27,8 @@ namespace RageCoop.Client.Scripting
         /// <summary>
         /// Client configuration, this will conflict with server-side config.
         /// </summary>
-        public static class Config
-        {
-            /// <summary>
-            /// Get or set local player's username, set won't be effective if already connected to a server.
-            /// </summary>
-            public static string Username
-            {
-                get => Main.Settings.Username;
-                set
-                {
-                    if (Networking.IsOnServer || string.IsNullOrEmpty(value))
-                    {
-                        return;
-                    }
-                    Main.Settings.Username = value;
-                }
-            }
-            /// <summary>
-            /// Enable automatic respawn for this player.
-            /// </summary>
-            public static bool EnableAutoRespawn { get; set; } = true;
-
-            /// <summary>
-            /// Get or set player's blip color
-            /// </summary>
-            public static BlipColor BlipColor { get; set; } = BlipColor.White;
-
-            /// <summary>
-            /// Get or set player's blip sprite
-            /// </summary>
-            public static BlipSprite BlipSprite { get; set; } = BlipSprite.Standard;
-
-            /// <summary>
-            /// Get or set scale of player's blip
-            /// </summary>
-            public static float BlipScale { get; set; } = 1;
-
-        }
+        public static Settings Settings { get; set; }
+       
         /// <summary>
         /// Base events for RageCoop
         /// </summary>
@@ -205,7 +169,7 @@ namespace RageCoop.Client.Scripting
         /// <summary>
         /// Check if the RAGECOOP list of players is visible
         /// </summary>
-        public static bool IsPlayerListVisible => Util.GetTickCount64() - PlayerList.Pressed < 5000;
+        public static bool IsPlayerListVisible => PlayerList.Visible;
 
         /// <summary>
         /// Get the version of RAGECOOP
@@ -255,7 +219,7 @@ namespace RageCoop.Client.Scripting
         /// <returns></returns>
         public static List<ServerInfo> ListServers()
         {
-            return JsonConvert.DeserializeObject<List<ServerInfo>>(HttpHelper.DownloadString(Main.Settings.MasterServer));
+            return JsonConvert.DeserializeObject<List<ServerInfo>>(HttpHelper.DownloadString(API.Settings.MasterServer));
         }
 
         /// <summary>

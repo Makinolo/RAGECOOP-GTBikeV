@@ -102,7 +102,7 @@ namespace RageCoop.Client
                 Main.LocalPlayerID = c.OwnerID = c.ID;
                 Add(c);
                 Main.Logger.Debug($"Local player ID is:{c.ID}");
-                PlayerList.SetPlayer(c.ID, Main.Settings.Username);
+                PlayerList.SetPlayer(c.ID, API.Settings.Username);
                 return true;
             }
 
@@ -365,7 +365,7 @@ namespace RageCoop.Client
                 {
                     if (!PedsByHandle.ContainsKey(p.Handle) && p != Game.Player.Character && !mainCharacters.Contains((PedHash)p.Model.Hash))
                     {
-                        if (PedsByID.Count(x => x.Value.IsLocal) > Main.Settings.WorldPedSoftLimit)
+                        if (PedsByID.Count(x => x.Value.IsLocal) > API.Settings.WorldPedSoftLimit)
                         {
                             if (p.PopulationType == EntityPopulationType.RandomAmbient && !p.IsInVehicle())
                             {
@@ -440,7 +440,7 @@ namespace RageCoop.Client
                 {
                     if (!VehiclesByHandle.ContainsKey(veh.Handle))
                     {
-                        if (VehiclesByID.Count(x => x.Value.IsLocal) > Main.Settings.WorldVehicleSoftLimit)
+                        if (VehiclesByID.Count(x => x.Value.IsLocal) > API.Settings.WorldVehicleSoftLimit)
                         {
                             if (veh.PopulationType == EntityPopulationType.RandomAmbient || veh.PopulationType == EntityPopulationType.RandomParked)
                             {

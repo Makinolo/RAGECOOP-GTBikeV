@@ -1,6 +1,7 @@
 ﻿using GTA;
 using Lidgren.Network;
 using RageCoop.Client.Menus;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Linq;
@@ -246,7 +247,7 @@ namespace RageCoop.Client
 
                 case PacketType.Voice:
                     {
-                        if (Main.Settings.Voice)
+                        if (API.Settings.Voice)
                         {
                             Packets.Voice packet = new Packets.Voice();
                             packet.Deserialize(msg);
@@ -265,7 +266,7 @@ namespace RageCoop.Client
                     {
                         Packets.CustomEvent packet = new Packets.CustomEvent(_resolveHandle);
                         packet.Deserialize(msg);
-                        Scripting.API.Events.InvokeCustomEventReceived(packet);
+                        API.Events.InvokeCustomEventReceived(packet);
                     }
                     break;
 
@@ -306,7 +307,7 @@ namespace RageCoop.Client
             SyncedPed c = EntityPool.GetPedByID(packet.ID);
             if (c == null)
             {
-                if (EntityPool.PedsByID.Count(x => x.Value.OwnerID == packet.OwnerID) < Main.Settings.WorldPedSoftLimit / PlayerList.Players.Count ||
+                if (EntityPool.PedsByID.Count(x => x.Value.OwnerID == packet.OwnerID) < API.Settings.WorldPedSoftLimit / PlayerList.Players.Count ||
                     /*EntityPool.VehiclesByID.Any(x => x.Value.Position.DistanceTo(packet.Position) < 2) ||*/ // allows players to exceed the peds limit
                     packet.ID == packet.OwnerID)
                 {
@@ -360,7 +361,7 @@ namespace RageCoop.Client
             SyncedVehicle v = EntityPool.GetVehicleByID(packet.ID);
             if (v == null)
             {
-                if (EntityPool.VehiclesByID.Count(x => x.Value.OwnerID == packet.OwnerID) < Main.Settings.WorldVehicleSoftLimit / PlayerList.Players.Count ||
+                if (EntityPool.VehiclesByID.Count(x => x.Value.OwnerID == packet.OwnerID) < API.Settings.WorldVehicleSoftLimit / PlayerList.Players.Count ||
                     EntityPool.PedsByID.Any(x => x.Value.VehicleID == packet.ID || x.Value.Position.DistanceTo(packet.Position) < 2))
                 {
                     // Main.Logger.Debug($"Creating vehicle for incoming sync:{packet.ID}");

@@ -1,6 +1,7 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.Native;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Drawing;
@@ -141,7 +142,7 @@ namespace RageCoop.Client
             try
             {
                 path = path ?? SettingsPath;
-                settings = settings ?? Main.Settings;
+                settings = settings ?? API.Settings;
                 Directory.CreateDirectory(Directory.GetParent(path).FullName);
 
                 using (FileStream stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite))

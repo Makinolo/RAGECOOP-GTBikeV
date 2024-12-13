@@ -20,24 +20,24 @@ namespace RageCoop.Client
     /// </summary>
     internal class Main : Script
     {
-        internal static Version Version = typeof(Main).Assembly.GetName().Version;
+        internal static Version Version => typeof(Main).Assembly.GetName().Version;
 
-        internal static int LocalPlayerID = 0;
+        internal static int LocalPlayerID { get; set; } = 0;
 
-        internal static RelationshipGroup SyncedPedsGroup;
-
-        internal static new Settings Settings = null;
-        internal static Scripting.BaseScript BaseScript = new Scripting.BaseScript();
+        internal static RelationshipGroup SyncedPedsGroup { get; private set; }
 
         internal static Chat MainChat = null;
-        internal static Stopwatch Counter = new Stopwatch();
+        internal static Stopwatch Counter { get; } = new Stopwatch();
         internal static Logger Logger = null;
 
         internal static ulong Ticked = 0;
         internal static Vector3 PlayerPosition;
-        internal static Scripting.Resources Resources = null;
+        internal static Resources Resources = null;
+
+        private static BaseScript BaseScript = new BaseScript();
         private static readonly List<Func<bool>> QueuedActions = new List<Func<bool>>();
-        public static Worker Worker;
+        private static bool _welcomeNotificationShown = false;
+        private static Worker Worker;
 
         /// <summary>
         /// Don't use it!
@@ -47,18 +47,18 @@ namespace RageCoop.Client
             Worker = new Worker("RageCoop.Client.Main.Worker", Logger);
             try
             {
-                Settings = Util.ReadSettings();
+                API.Settings = Util.ReadSettings();
             }
             catch
             {
                 GTA.UI.Notification.PostTicker("Malformed configuration, overwriting with default values...", false);
-                Settings = new Settings();
+                API.Settings = new Settings();
                 Util.SaveSettings();
             }
-            Directory.CreateDirectory(Settings.DataDirectory);
+            Directory.CreateDirectory(API.Settings.DataDirectory);
             Logger = new Logger()
             {
-                LogPath = $"{Settings.DataDirectory}\\RageCoop.Client.log",
+                LogPath = $"{API.Settings.DataDirectory}\\RageCoop.Client.log",
                 UseConsole = false,
 #if DEBUG
                 LogLevel = 0,
@@ -97,15 +97,17 @@ namespace RageCoop.Client
             {
                 return;
             }
-#if !NON_INTERACTIVE
-            else if (!_gameLoaded && (_gameLoaded = true))
+
+            if (API.Settings.Interactive)
             {
+                if (!_welcomeNotificationShown)
+                {
+                    _welcomeNotificationShown = true;
+                    GTA.UI.Notification.PostMessageText($"Press ~g~{API.Settings.MenuKey}~s~ to open the menu.", new GTA.Graphics.TextureAsset("CHAR_ALL_PLAYERS_CONF", "CHAR_ALL_PLAYERS_CONF"), false, GTA.UI.FeedTextIcon.Message, "RAGECOOP", "Welcome!");
+                }
 
-                GTA.UI.Notification.PostMessageText($"Press ~g~{Settings.MenuKey}~s~ to open the menu.", new GTA.Graphics.TextureAsset("CHAR_ALL_PLAYERS_CONF", "CHAR_ALL_PLAYERS_CONF"), false, GTA.UI.FeedTextIcon.Message, "RAGECOOP", "Welcome!");
+                CoopMenu.MenuPool.Process();
             }
-
-            CoopMenu.MenuPool.Process();
-#endif
 
             DoQueuedActions();
             if (!Networking.IsOnServer)
@@ -136,7 +138,7 @@ namespace RageCoop.Client
 
             MainChat.Tick();
             PlayerList.Tick();
-            if (!Scripting.API.Config.EnableAutoRespawn)
+            if (!API.Settings.EnableAutoRespawn)
             {
                 Function.Call(Hash.PAUSE_DEATH_ARREST_RESTART, true);
                 Function.Call(Hash.IGNORE_NEXT_RESTART, true);
@@ -196,15 +198,14 @@ namespace RageCoop.Client
                     Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
                     return;
                 }
-                if (Game.IsControlPressed(GTA.Control.FrontendPauseAlternate) && Settings.DisableAlternatePause)
+                if (Game.IsControlPressed(GTA.Control.FrontendPauseAlternate) && API.Settings.DisableAlternatePause)
                 {
                     Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
                     return;
                 }
             }
-            if (e.KeyCode == Settings.MenuKey)
+            if (e.KeyCode == API.Settings.MenuKey && API.Settings.Interactive)
             {
-#if !NON_INTERACTIVE
                 if (CoopMenu.MenuPool.AreAnyVisible)
                 {
                     CoopMenu.MenuPool.ForEach<LemonUI.Menus.NativeMenu>(x =>
@@ -220,7 +221,6 @@ namespace RageCoop.Client
                 {
                     CoopMenu.LastMenu.Visible = true;
                 }
-#endif
             }
             else if (Game.IsControlJustPressed(GTA.Control.MpTextChatAll))
             {
@@ -234,11 +234,10 @@ namespace RageCoop.Client
             {
                 if (Networking.IsOnServer)
                 {
-                    ulong currentTimestamp = Util.GetTickCount64();
-                    PlayerList.Pressed = (currentTimestamp - PlayerList.Pressed) < 5000 ? (currentTimestamp - 6000) : currentTimestamp;
+                    PlayerList.Request();
                 }
             }
-            else if (e.KeyCode == Settings.PassengerKey)
+            else if (e.KeyCode == API.Settings.PassengerKey)
             {
                 var P = Game.Player.Character;
 
@@ -277,19 +276,19 @@ namespace RageCoop.Client
         internal static void Connected()
         {
             Memory.ApplyPatches();
-            if (Settings.Voice && !Voice.WasInitialized())
+            if (API.Settings.Voice && !Voice.WasInitialized())
             {
                 Voice.Init();
             }
             QueueAction(() =>
             {
-                WorldThread.Traffic(!Settings.DisableTraffic);
+                WorldThread.Traffic(!API.Settings.DisableTraffic);
                 Function.Call(Hash.SET_ENABLE_VEHICLE_SLIPSTREAMING, true);
                 API.Events.InvokeLocalConnection();
-#if !NON_INTERACTIVE
-                CoopMenu.ConnectedMenuSetting();
-                GTA.UI.Notification.PostTicker("~g~Connected!", false);
-#endif
+                if(API.Settings.Interactive) {
+                    CoopMenu.ConnectedMenuSetting();
+                    GTA.UI.Notification.PostTicker("~g~Connected!", false);
+                }
                 MainChat.Init();
             });
 
@@ -311,11 +310,12 @@ namespace RageCoop.Client
                 EntityPool.Cleanup();
                 WorldThread.Traffic(true);
                 Function.Call(Hash.SET_ENABLE_VEHICLE_SLIPSTREAMING, false);
-#if !NON_INTERACTIVE
-                CoopMenu.DisconnectedMenuSetting();
-                if (reason != "Abort")
-                    GTA.UI.Notification.PostTicker("~r~Disconnected: " + reason, false);
-#endif
+                if (API.Settings.Interactive)
+                {
+                    CoopMenu.DisconnectedMenuSetting();
+                    if (reason != "Abort")
+                        GTA.UI.Notification.PostTicker("~r~Disconnected: " + reason, false);
+                }
                 LocalPlayerID = default;
             });
             Memory.RestorePatches();

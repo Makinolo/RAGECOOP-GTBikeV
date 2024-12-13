@@ -3,6 +3,7 @@ using GTA.Native;
 using LemonUI;
 using LemonUI.Menus;
 using LemonUI.Scaleform;
+using RageCoop.Client.Scripting;
 using System.Drawing;
 
 namespace RageCoop.Client.Menus
@@ -16,7 +17,7 @@ namespace RageCoop.Client.Menus
         public static NativeMenu Menu = new NativeMenu("RAGECOOP", "MAIN")
         {
             UseMouse = false,
-            Alignment = Main.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
+            Alignment = API.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
         };
         public static PopUp PopUp = new PopUp()
         {
@@ -29,10 +30,10 @@ namespace RageCoop.Client.Menus
         };
         public static NativeMenu LastMenu { get; set; } = Menu;
         #region ITEMS
-        private static readonly NativeItem _usernameItem = new NativeItem("Username") { AltTitle = Main.Settings.Username };
-        private static readonly NativeItem _passwordItem = new NativeItem("Password") { AltTitle = new string('*', Main.Settings.Password.Length) };
+        private static readonly NativeItem _usernameItem = new NativeItem("Username") { AltTitle = API.Settings.Username };
+        private static readonly NativeItem _passwordItem = new NativeItem("Password") { AltTitle = new string('*', API.Settings.Password.Length) };
 
-        public static readonly NativeItem ServerIpItem = new NativeItem("Server IP") { AltTitle = Main.Settings.LastServerAddress };
+        public static readonly NativeItem ServerIpItem = new NativeItem("Server IP") { AltTitle = API.Settings.LastServerAddress };
         internal static readonly NativeItem _serverConnectItem = new NativeItem("Connect");
         private static readonly NativeItem _aboutItem = new NativeItem("About", "~y~SOURCE~s~~n~" +
             "https://github.com/RAGECOOP~n~" +
@@ -55,7 +56,7 @@ namespace RageCoop.Client.Menus
             _usernameItem.Activated += UsernameActivated;
             _passwordItem.Activated += _passwordActivated;
             ServerIpItem.Activated += ServerIpActivated;
-            _serverConnectItem.Activated += (sender, item) => { Networking.ToggleConnection(Main.Settings.LastServerAddress); };
+            _serverConnectItem.Activated += (sender, item) => { Networking.ToggleConnection(API.Settings.LastServerAddress); };
 
 
             Menu.AddSubMenu(ServersMenu.Menu);
@@ -128,7 +129,7 @@ namespace RageCoop.Client.Menus
             string newUsername = Game.GetUserInput(WindowTitle.EnterMessage20, _usernameItem.AltTitle, 20);
             if (!string.IsNullOrWhiteSpace(newUsername))
             {
-                Main.Settings.Username = newUsername;
+                API.Settings.Username = newUsername;
                 Util.SaveSettings();
 
                 _usernameItem.AltTitle = newUsername;
@@ -138,7 +139,7 @@ namespace RageCoop.Client.Menus
         private static void _passwordActivated(object sender, System.EventArgs e)
         {
             string newPass = Game.GetUserInput(WindowTitle.EnterMessage20, "", 20);
-            Main.Settings.Password = newPass;
+            API.Settings.Password = newPass;
             Util.SaveSettings();
             _passwordItem.AltTitle = new string('*', newPass.Length);
         }
@@ -147,7 +148,7 @@ namespace RageCoop.Client.Menus
             string newServerIp = Game.GetUserInput(WindowTitle.EnterMessage60, ServerIpItem.AltTitle, 60);
             if (!string.IsNullOrWhiteSpace(newServerIp) && newServerIp.Contains(":"))
             {
-                Main.Settings.LastServerAddress = newServerIp;
+                API.Settings.LastServerAddress = newServerIp;
                 Util.SaveSettings();
 
                 ServerIpItem.AltTitle = newServerIp;

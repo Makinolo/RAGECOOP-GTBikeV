@@ -2,6 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 using Lidgren.Network;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,14 +12,18 @@ namespace RageCoop.Client
 {
     internal static class PlayerList
     {
+        private const int UPDATE_INTERVAL_MS = 1000;
+        private const int PLAYER_LIST_SHOW_TIME_MS = 5000;
         private const float LEFT_POSITION = 0.122f;
         private const float RIGHT_POSITION = 0.9f;
         private static readonly Scaleform _mainScaleform = Scaleform.RequestMovie("mp_mm_card_freemode");
         private static ulong _lastUpdate = Util.GetTickCount64();
-        public static ulong Pressed { get; set; }
+        private static ulong _pressedTimestamp { get; set; }
 
-        public static bool LeftAlign => !Main.Settings.FlipMenu;
+        public static bool LeftAlign => !API.Settings.FlipMenu;
         public static Dictionary<int, Player> Players = new Dictionary<int, Player> { };
+        public static bool Visible { get; private set; }
+
         public static void Tick()
         {
             if (!Networking.IsOnServer)
@@ -26,22 +31,30 @@ namespace RageCoop.Client
                 return;
             }
 
-            if ((Util.GetTickCount64() - _lastUpdate) >= 1000)
+            if ((Util.GetTickCount64() - _lastUpdate) >= UPDATE_INTERVAL_MS)
             {
                 Update();
             }
 
-            if ((Util.GetTickCount64() - Pressed) < 5000 && !Main.MainChat.Focused
-#if !NON_INTERACTIVE
-                && !Menus.CoopMenu.MenuPool.AreAnyVisible
-#endif
-                )
+            // Show the scale form for the player list during SHOW_TIME when the main chat is not 
+            // on focus and the system is in non interactive mode or no menus are visible
+            Visible = (Util.GetTickCount64() - _pressedTimestamp) < PLAYER_LIST_SHOW_TIME_MS &&
+                        !Main.MainChat.Focused &&
+                        (!API.Settings.Interactive || !Menus.CoopMenu.MenuPool.AreAnyVisible);
+           
+            if (Visible)
             {
                 Function.Call(Hash.DRAW_SCALEFORM_MOVIE, _mainScaleform.Handle,
                                 LeftAlign ? LEFT_POSITION : RIGHT_POSITION, 0.3f,
                                 0.28f, 0.6f,
                                 255, 255, 255, 255, 0);
             }
+        }
+
+        public static void Request()
+        {
+            ulong currentTimestamp = Util.GetTickCount64();
+            _pressedTimestamp = (currentTimestamp - _pressedTimestamp) < PLAYER_LIST_SHOW_TIME_MS ? (currentTimestamp - (PLAYER_LIST_SHOW_TIME_MS + 1)) : currentTimestamp;
         }
 
         private static void Update()
@@ -95,9 +108,9 @@ namespace RageCoop.Client
                     }
                     else
                     {
-                        p.FakeBlip.Color = Scripting.API.Config.BlipColor;
-                        p.FakeBlip.Scale = Scripting.API.Config.BlipScale;
-                        p.FakeBlip.Sprite = Scripting.API.Config.BlipSprite;
+                        p.FakeBlip.Color = API.Settings.BlipColor;
+                        p.FakeBlip.Scale = API.Settings.BlipScale;
+                        p.FakeBlip.Sprite = API.Settings.BlipSprite;
                         p.FakeBlip.DisplayType = BlipDisplayType.Default;
                         p.FakeBlip.Position = p.Position;
                     }

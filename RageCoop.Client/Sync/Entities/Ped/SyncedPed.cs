@@ -2,6 +2,7 @@
 using GTA.Math;
 using GTA.Native;
 using LemonUI.Elements;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
@@ -76,7 +77,7 @@ namespace RageCoop.Client
                     }
                 }
 
-                if (!Main.Settings.ShowPlayerBlip && (byte)BlipColor != 255) BlipColor = (BlipColor)255;
+                if (!API.Settings.ShowPlayerBlip && (byte)BlipColor != 255) BlipColor = (BlipColor)255;
                 if ((byte)BlipColor == 255 && PedBlip != null)
                 {
                     PedBlip.Delete();
@@ -177,7 +178,7 @@ namespace RageCoop.Client
 
         private void RenderNameTag()
         {
-            if (!Owner.DisplayNameTag || !Main.Settings.ShowPlayerNameTag || MainPed == null || !MainPed.IsVisible || !MainPed.IsInRange(Main.PlayerPosition, 40f))
+            if (!Owner.DisplayNameTag || !API.Settings.ShowPlayerNameTag || MainPed == null || !MainPed.IsVisible || !MainPed.IsInRange(Main.PlayerPosition, 40f))
             {
                 return;
             }

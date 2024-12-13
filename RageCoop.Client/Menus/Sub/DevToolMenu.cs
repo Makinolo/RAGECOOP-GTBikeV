@@ -1,5 +1,6 @@
 ﻿using GTA;
 using LemonUI.Menus;
+using RageCoop.Client.Scripting;
 using System;
 using System.Drawing;
 
@@ -10,7 +11,7 @@ namespace RageCoop.Client
         public static NativeMenu Menu = new NativeMenu("RAGECOOP", "DevTool", "Help with the development")
         {
             UseMouse = false,
-            Alignment = Main.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
+            Alignment = API.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
         };
         private static readonly NativeCheckboxItem enableItem = new NativeCheckboxItem("Enable");
 

@@ -38,7 +38,7 @@ namespace RageCoop.Core
         internal Logger(bool flushImmediately = false, bool overwrite = true)
         {
             FlushImmediately = flushImmediately;
-            if (File.Exists(LogPath) && overwrite) { File.Delete(LogPath); }
+            if (File.Exists(LogPath) && overwrite) { try { File.Delete(LogPath); } catch { } }
             Name = Process.GetCurrentProcess().Id.ToString();
             if (!flushImmediately)
             {
@@ -50,7 +50,7 @@ namespace RageCoop.Core
                           {
                               Thread.Sleep(100);
                           }
-                          if (File.Exists(LogPath) && overwrite) { File.Delete(LogPath); }
+                          if (File.Exists(LogPath) && overwrite) { try { File.Delete(LogPath); } catch { } }
                       }
                       while (!Stopping)
                       {

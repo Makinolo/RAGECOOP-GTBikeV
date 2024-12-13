@@ -89,9 +89,9 @@ namespace RageCoop.Client.Scripting
             if (p == null) { return; }
             if (p.Handle == Game.Player.Character.Handle)
             {
-                API.Config.BlipColor = (BlipColor)(byte)e.Args[1];
-                API.Config.BlipSprite = (BlipSprite)(ushort)e.Args[2];
-                API.Config.BlipScale = (float)e.Args[3];
+                API.Settings.BlipColor = (BlipColor)(byte)e.Args[1];
+                API.Settings.BlipSprite = (BlipSprite)(ushort)e.Args[2];
+                API.Settings.BlipScale = (float)e.Args[3];
             }
             else
             {
@@ -172,7 +172,7 @@ namespace RageCoop.Client.Scripting
         }
         private void SetAutoRespawn(CustomEventReceivedArgs args)
         {
-            API.Config.EnableAutoRespawn = (bool)args.Args[0];
+            API.Settings.EnableAutoRespawn = (bool)args.Args[0];
         }
         private void DeleteServerProp(CustomEventReceivedArgs e)
         {

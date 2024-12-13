@@ -1,6 +1,7 @@
 ﻿using GTA.UI;
 using LemonUI.Menus;
 using Newtonsoft.Json;
+using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace RageCoop.Client.Menus
         internal static NativeMenu Menu = new NativeMenu("RAGECOOP", "Servers", "Go to the server list")
         {
             UseMouse = false,
-            Alignment = Main.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
+            Alignment = API.Settings.FlipMenu ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left
         };
         internal static NativeItem ResultItem = null;
 
@@ -56,7 +57,7 @@ namespace RageCoop.Client.Menus
         private static void GetAllServers()
         {
             List<ServerInfo> serverList = null;
-            var realUrl = Main.Settings.MasterServer;
+            var realUrl = API.Settings.MasterServer;
             serverList = JsonConvert.DeserializeObject<List<ServerInfo>>(DownloadString(realUrl));
 
             // Need to be processed in main thread
@@ -92,12 +93,12 @@ namespace RageCoop.Client.Menus
                                 }
                             }
                             Networking.ToggleConnection(address, null, null, PublicKey.FromServerInfo(server));
-#if !NON_INTERACTIVE
-                            CoopMenu.ServerIpItem.AltTitle = address;
-
-                            CoopMenu.Menu.Visible = true;
-#endif
-                            Main.Settings.LastServerAddress = address;
+                            if (API.Settings.Interactive)
+                            {
+                                CoopMenu.ServerIpItem.AltTitle = address;
+                                CoopMenu.Menu.Visible = true;
+                            }
+                            API.Settings.LastServerAddress = address;
                             Util.SaveSettings();
                         }
                         catch (Exception ex)

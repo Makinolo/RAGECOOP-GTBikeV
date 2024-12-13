@@ -1,4 +1,5 @@
-﻿using RageCoop.Core;
+﻿using RageCoop.Client.Scripting;
+using RageCoop.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -55,7 +56,7 @@ namespace RageCoop.Client
                 }
             });
         }
-        public static string ResourceFolder => Path.GetFullPath(Path.Combine(Main.Settings.DataDirectory, "Resources", Main.Settings.LastServerAddress.Replace(":", ".")));
+        public static string ResourceFolder => Path.GetFullPath(Path.Combine(API.Settings.DataDirectory, "Resources", API.Settings.LastServerAddress.Replace(":", ".")));
         private static readonly Dictionary<int, DownloadFile> InProgressDownloads = new Dictionary<int, DownloadFile>();
         private static readonly HashSet<string> _resources = new HashSet<string>();
         public static bool AddFile(int id, string name, long length)

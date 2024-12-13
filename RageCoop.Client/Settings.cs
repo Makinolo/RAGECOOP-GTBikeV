@@ -1,4 +1,6 @@
 ﻿#undef DEBUG
+using GTA;
+using System;
 using System.Windows.Forms;
 namespace RageCoop.Client
 {
@@ -7,10 +9,23 @@ namespace RageCoop.Client
     /// </summary>
     public class Settings
     {
+        [NonSerialized]
+        private string _username = "Player";
         /// <summary>
-        /// Don't use it!
+        /// Get or set local player's username, set won't be effective if already connected to a server.
         /// </summary>
-        public string Username { get; set; } = "Player";
+        public string Username
+        {
+            get => _username;
+            set
+            {
+                if (Networking.IsOnServer || string.IsNullOrEmpty(value))
+                {
+                    return;
+                }
+                _username = value;
+            }
+        }
         /// <summary>
         /// The password used to authenticate when connecting to a server.
         /// </summary>
@@ -87,5 +102,31 @@ namespace RageCoop.Client
         ///     Show other player's blip on map
         /// </summary>
         public bool ShowPlayerBlip { get; set; } = true;
+
+        /// <summary>
+        /// Enable automatic respawn for this player.
+        /// </summary>
+        public bool EnableAutoRespawn { get; set; } = true;
+
+        /// <summary>
+        /// Get or set player's blip color
+        /// </summary>
+        public BlipColor BlipColor { get; set; } = BlipColor.White;
+
+        /// <summary>
+        /// Get or set player's blip sprite
+        /// </summary>
+        public BlipSprite BlipSprite { get; set; } = BlipSprite.Standard;
+
+        /// <summary>
+        /// Get or set scale of player's blip
+        /// </summary>
+        public float BlipScale { get; set; } = 1;
+
+        /// <summary>
+        /// In non interactive mode the menus are always hidden and all
+        /// the interaction is handled by the API
+        /// </summary>
+        public bool Interactive = true;
     }
 }
