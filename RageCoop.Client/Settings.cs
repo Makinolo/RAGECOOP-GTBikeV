@@ -127,6 +127,6 @@ namespace RageCoop.Client
         /// In non interactive mode the menus are always hidden and all
         /// the interaction is handled by the API
         /// </summary>
-        public bool Interactive = true;
+        public bool Interactive = false;
     }
 }

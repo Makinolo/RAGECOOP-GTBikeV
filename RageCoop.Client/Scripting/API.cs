@@ -28,7 +28,7 @@ namespace RageCoop.Client.Scripting
         /// Client configuration, this will conflict with server-side config.
         /// </summary>
         public static Settings Settings { get; set; }
-       
+
         /// <summary>
         /// Base events for RageCoop
         /// </summary>
@@ -109,20 +109,20 @@ namespace RageCoop.Client.Scripting
             #endregion
             #region INVOKE
 
-            internal static void InvokeConnection(Player p) { OnPlayerConnected?.Invoke(null, p); }
-            internal static void InvokeDisconnection(Player p) { OnPlayerDisconnected?.Invoke(null, p); }
-            internal static void InvokeLocalConnection() { OnLocalPlayerConnected?.Invoke(null, null); }
-            internal static void InvokeLocalDisconnection(string reason) { OnLocalPlayerDisconnected?.Invoke(null, reason); }
-            internal static void InvokeVehicleSpawned(SyncedVehicle v) { OnVehicleSpawned?.Invoke(null, v); }
-            internal static void InvokeVehicleDeleted(SyncedVehicle v) { OnVehicleDeleted?.Invoke(null, v); }
-            internal static void InvokePedSpawned(SyncedPed p) { OnPedSpawned?.Invoke(null, p); }
-            internal static void InvokePedDeleted(SyncedPed p) { OnPedDeleted?.Invoke(null, p); }
-            internal static void InvokePlayerDied(string m) { OnPlayerDied?.Invoke(null, m); }
-            internal static void InvokeTick() { OnTick?.Invoke(); }
+            internal static void InvokeConnection(Player p) { API.QueueAction(() => OnPlayerConnected?.Invoke(null, p));}
+            internal static void InvokeDisconnection(Player p) { API.QueueAction(() => OnPlayerDisconnected?.Invoke(null, p)); }
+            internal static void InvokeLocalConnection() { API.QueueAction(() => OnLocalPlayerConnected?.Invoke(null, null)); }
+            internal static void InvokeLocalDisconnection(string reason) { API.QueueAction(() => OnLocalPlayerDisconnected?.Invoke(null, reason)); }
+            internal static void InvokeVehicleSpawned(SyncedVehicle v) { API.QueueAction(() => OnVehicleSpawned?.Invoke(null, v)); }
+            internal static void InvokeVehicleDeleted(SyncedVehicle v) { API.QueueAction(() => OnVehicleDeleted?.Invoke(null, v)); }
+            internal static void InvokePedSpawned(SyncedPed p) { API.QueueAction(() => OnPedSpawned?.Invoke(null, p)); }
+            internal static void InvokePedDeleted(SyncedPed p) { API.QueueAction(() => OnPedDeleted?.Invoke(null, p)); }
+            internal static void InvokePlayerDied(string m) { API.QueueAction(() => OnPlayerDied?.Invoke(null, m)); }
+            internal static void InvokeTick() { API.QueueAction(() => OnTick?.Invoke()); }
 
-            internal static void InvokeKeyDown(object s, KeyEventArgs e) { OnKeyDown?.Invoke(s, e); }
+            internal static void InvokeKeyDown(object s, KeyEventArgs e) { API.QueueAction(() => OnKeyDown?.Invoke(s, e)); }
 
-            internal static void InvokeKeyUp(object s, KeyEventArgs e) { OnKeyUp?.Invoke(s, e); }
+            internal static void InvokeKeyUp(object s, KeyEventArgs e) { API.QueueAction(() => OnKeyUp?.Invoke(s, e)); }
 
             internal static void InvokeCustomEventReceived(Packets.CustomEvent p)
             {
@@ -132,7 +132,9 @@ namespace RageCoop.Client.Scripting
 
                 if (CustomEventHandlers.TryGetValue(p.Hash, out List<Action<CustomEventReceivedArgs>> handlers))
                 {
-                    handlers.ForEach((x) => { x.Invoke(args); });
+                    // The event handlers need to be queued or they could end up accessing SHVDN concurrently
+                    // from different threads ending up in an Access violation
+                    handlers.ForEach((x) => { API.QueueAction(() => x.Invoke(args)); } );
                 }
             }
             #endregion
@@ -181,10 +183,12 @@ namespace RageCoop.Client.Scripting
         /// </summary>
         /// <returns></returns>
         public static Logger Logger => Main.Logger;
+
         /// <summary>
-        /// Get all players indexed by their ID
+        /// Number of players currently connected
         /// </summary>
-        public static Dictionary<int, Player> Players => new Dictionary<int, Player>(PlayerList.Players);
+        /// <returns></returns>
+        public static int PlayerCount => PlayerList.PlayerCount;
 
         #endregion
 
@@ -317,6 +321,24 @@ namespace RageCoop.Client.Scripting
                     throw new ArgumentException("Requested file was not found on the server: " + name);
                 }
             });
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static Player GetPlayer(int id)
+        {
+            return PlayerList.GetPlayer(id);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static Player[] GetPlayerArray()
+        {
+            return PlayerList.GetPlayerArray();
         }
         #endregion
     }

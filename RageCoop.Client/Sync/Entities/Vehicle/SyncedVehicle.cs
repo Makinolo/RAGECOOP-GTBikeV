@@ -94,11 +94,9 @@ namespace RageCoop.Client
                 return;
             }
 
-            if (SteeringAngle != MainVehicle.SteeringAngle)
-            {
-                MainVehicle.CustomSteeringAngle((float)(Math.PI / 180) * SteeringAngle);
-            }
+            MainVehicle.SteeringAngle = SteeringAngle;
             MainVehicle.ThrottlePower = ThrottlePower;
+            MainVehicle.Throttle = ThrottlePower;
             MainVehicle.BrakePower = BrakePower;
 
             if (IsDead)

@@ -82,7 +82,8 @@ namespace RageCoop.Client
                                 if (message.SenderConnection.RemoteHailMessage == null) { return; }
 
                                 var p = message.SenderConnection.RemoteHailMessage.GetPacket<Packets.P2PConnect>();
-                                if (PlayerList.Players.TryGetValue(p.ID, out var player))
+                                var player = PlayerList.GetPlayer(p.ID);
+                                if (player != null)
                                 {
                                     player.Connection = message.SenderConnection;
                                     Main.Logger.Debug($"Direct connection to {player.Username} established");
@@ -90,7 +91,7 @@ namespace RageCoop.Client
                                 else
                                 {
                                     Main.Logger.Info($"Unidentified peer connection from {message.SenderEndPoint} was rejected.");
-                                    message.SenderConnection.Disconnect("eat poop");
+                                    message.SenderConnection.Disconnect("Unidentified connection");
                                 }
                             }
                             break;
@@ -307,7 +308,7 @@ namespace RageCoop.Client
             SyncedPed c = EntityPool.GetPedByID(packet.ID);
             if (c == null)
             {
-                if (EntityPool.PedsByID.Count(x => x.Value.OwnerID == packet.OwnerID) < API.Settings.WorldPedSoftLimit / PlayerList.Players.Count ||
+                if (EntityPool.PedCounterById.GetOrAdd(packet.OwnerID,0) < API.Settings.WorldPedSoftLimit / PlayerList.PlayerCount ||
                     /*EntityPool.VehiclesByID.Any(x => x.Value.Position.DistanceTo(packet.Position) < 2) ||*/ // allows players to exceed the peds limit
                     packet.ID == packet.OwnerID)
                 {
@@ -361,7 +362,7 @@ namespace RageCoop.Client
             SyncedVehicle v = EntityPool.GetVehicleByID(packet.ID);
             if (v == null)
             {
-                if (EntityPool.VehiclesByID.Count(x => x.Value.OwnerID == packet.OwnerID) < API.Settings.WorldVehicleSoftLimit / PlayerList.Players.Count ||
+                if (EntityPool.VehicleCounterById.GetOrAdd(packet.OwnerID,0) < API.Settings.WorldVehicleSoftLimit / PlayerList.PlayerCount ||
                     EntityPool.PedsByID.Any(x => x.Value.VehicleID == packet.ID || x.Value.Position.DistanceTo(packet.Position) < 2))
                 {
                     // Main.Logger.Debug($"Creating vehicle for incoming sync:{packet.ID}");

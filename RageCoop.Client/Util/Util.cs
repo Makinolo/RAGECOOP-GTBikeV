@@ -47,33 +47,6 @@ namespace RageCoop.Client
             return false;
         }
 
-
-        #region -- POINTER --
-        private static int _steeringAngleOffset { get; set; }
-
-        public static unsafe void NativeMemory()
-        {
-            IntPtr address;
-
-            address = Game.FindPattern("\x74\x0A\xF3\x0F\x11\xB3\x1C\x09\x00\x00\xEB\x25", "xxxxxx????xx");
-            if (address != IntPtr.Zero)
-            {
-                _steeringAngleOffset = *(int*)(address + 6) + 8;
-            }
-
-        }
-
-        public static unsafe void CustomSteeringAngle(this Vehicle veh, float value)
-        {
-            IntPtr address = new IntPtr((long)veh.MemoryAddress);
-            if (address == IntPtr.Zero || _steeringAngleOffset == 0)
-            {
-                return;
-            }
-
-            *(float*)(address + _steeringAngleOffset).ToPointer() = value;
-        }
-        #endregion
         #region MATH
         public static Vector3 LinearVectorLerp(Vector3 start, Vector3 end, ulong currentTime, int duration)
         {

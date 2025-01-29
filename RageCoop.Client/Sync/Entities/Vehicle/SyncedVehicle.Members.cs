@@ -16,8 +16,6 @@ namespace RageCoop.Client
         internal float ThrottlePower { get; set; }
         internal float BrakePower { get; set; }
         internal float DeluxoWingRatio { get; set; } = -1;
-
-
         internal byte LandingGear { get; set; }
         internal VehicleRoofState RoofState { get; set; }
         internal VehicleDamageModel DamageModel { get; set; }

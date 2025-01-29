@@ -23,7 +23,7 @@ namespace RageCoop.Client
             try
             {
                 if (!Networking.IsOnServer) { return; }
-                foreach (var p in PlayerList.Players.Values.ToArray())
+                foreach (var p in PlayerList.GetPlayerArray())
                 {
                     if (p.InternalEndPoint != null && p.ExternalEndPoint != null && (p.Connection == null || p.Connection.Status == NetConnectionStatus.Disconnected))
                     {
@@ -46,7 +46,8 @@ namespace RageCoop.Client
 
         public static void Add(Packets.HolePunchInit p)
         {
-            if (PlayerList.Players.TryGetValue(p.TargetID, out var player))
+            var player = PlayerList.GetPlayer(p.TargetID);
+            if (player!=null)
             {
                 Main.Logger.Debug($"{p.TargetID},{player.Username} added to HolePunch target");
                 player.InternalEndPoint = CoreUtils.StringToEndPoint(p.TargetInternal);
@@ -61,7 +62,8 @@ namespace RageCoop.Client
         public static void Punched(Packets.HolePunch p, IPEndPoint from)
         {
             Main.Logger.Debug($"HolePunch message received from:{from}, status:{p.Status}");
-            if (PlayerList.Players.TryGetValue(p.Puncher, out var puncher))
+            var puncher = PlayerList.GetPlayer(p.Puncher);
+            if (puncher != null)
             {
                 Main.Logger.Debug("Puncher identified as: " + puncher.Username);
                 puncher.HolePunchStatus = (byte)(p.Status + 1);

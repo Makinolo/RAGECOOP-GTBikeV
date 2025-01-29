@@ -7,6 +7,7 @@ using RageCoop.Core;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 
 namespace RageCoop.Client
 {
@@ -19,10 +20,11 @@ namespace RageCoop.Client
         private static readonly Scaleform _mainScaleform = Scaleform.RequestMovie("mp_mm_card_freemode");
         private static ulong _lastUpdate = Util.GetTickCount64();
         private static ulong _pressedTimestamp { get; set; }
+        private static Dictionary<int, Player> Players = new Dictionary<int, Player> { };
 
         public static bool LeftAlign => !API.Settings.FlipMenu;
-        public static Dictionary<int, Player> Players = new Dictionary<int, Player> { };
         public static bool Visible { get; private set; }
+        public static int PlayerCount => Players.Count;
 
         public static void Tick()
         {
@@ -120,8 +122,10 @@ namespace RageCoop.Client
         }
         public static Player GetPlayer(int id)
         {
-            Players.TryGetValue(id, out Player p);
-            return p;
+            if (Players.TryGetValue(id, out Player p))
+                { return p; }
+            else
+                { return null; }
         }
         public static Player GetPlayer(SyncedPed p)
         {
@@ -131,6 +135,10 @@ namespace RageCoop.Client
                 player.Character = p;
             }
             return player;
+        }
+        public static Player[] GetPlayerArray()
+        {
+            return Players.Values.ToArray();
         }
         public static void RemovePlayer(int id)
         {

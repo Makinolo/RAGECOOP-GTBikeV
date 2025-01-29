@@ -81,7 +81,6 @@ namespace RageCoop.Client
 
             Aborted += (object sender, EventArgs e) => Disconnected("Abort");
 
-            Util.NativeMemory();
             Counter.Restart();
         }
 
@@ -196,11 +195,13 @@ namespace RageCoop.Client
                 if (Game.IsControlPressed(GTA.Control.FrontendPause))
                 {
                     Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
+                    GTA.UI.Hud.IsRadarVisible = false;
                     return;
                 }
                 if (Game.IsControlPressed(GTA.Control.FrontendPauseAlternate) && API.Settings.DisableAlternatePause)
                 {
                     Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
+                    GTA.UI.Hud.IsRadarVisible = true;
                     return;
                 }
             }
