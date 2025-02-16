@@ -1,6 +1,7 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.Native;
+using GTA.UI;
 using LemonUI.Elements;
 using RageCoop.Client.Scripting;
 using RageCoop.Core;
@@ -8,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace RageCoop.Client
 {
@@ -50,6 +52,10 @@ namespace RageCoop.Client
             if (IsPlayer)
             {
                 RenderNameTag();
+                if (Owner.Character == null)
+                {
+                    Owner.Character = this;
+                }
             }
 
             // Check if all data avalible
@@ -183,18 +189,17 @@ namespace RageCoop.Client
                 return;
             }
 
-            Vector3 targetPos = MainPed.Bones[Bone.IKHead].Position;
-            Point toDraw = default;
-            if (Util.WorldToScreen(targetPos, ref toDraw))
-            {
-                toDraw.Y -= 100;
-                new ScaledText(toDraw, Owner.Username, 0.4f, GTA.UI.Font.ChaletLondon)
-                {
-                    Outline = true,
-                    Alignment = GTA.UI.Alignment.Center,
-                    Color = Owner.HasDirectConnection ? Color.FromArgb(179, 229, 252) : Color.White,
-                }.Draw();
-            }
+            Vector3 targetPos = MainPed.Bones[Bone.IKHead].Position + new Vector3(0, 0, 0.5f) + MainPed.Velocity / Game.FPS;
+            TextElement _nameTag = new TextElement( Owner.Username, 
+                                                    new PointF(0, 0), 
+                                                    1f,
+                                                    Owner.HasDirectConnection ? Color.FromArgb(179, 229, 252) : Color.White,
+                                                    GTA.UI.Font.ChaletLondon,
+                                                    Alignment.Center, false, true);
+            Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+            _nameTag.Scale = 0.4f - GameplayCamera.Position.DistanceTo(Position) * 0.01f;
+            _nameTag.Draw();
+            Function.Call(Hash.CLEAR_DRAW_ORIGIN);
         }
 
         private bool CreateCharacter()

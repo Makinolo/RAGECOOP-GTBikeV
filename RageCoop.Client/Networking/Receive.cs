@@ -377,6 +377,7 @@ namespace RageCoop.Client
             v.Position = packet.Position;
             v.Quaternion = packet.Quaternion;
             v.SteeringAngle = packet.SteeringAngle;
+            v.Speed = packet.Speed;
             v.ThrottlePower = packet.ThrottlePower;
             v.BrakePower = packet.BrakePower;
             v.Velocity = packet.Velocity;

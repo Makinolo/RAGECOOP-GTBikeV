@@ -127,15 +127,6 @@ namespace RageCoop.Client
             else
                 { return null; }
         }
-        public static Player GetPlayer(SyncedPed p)
-        {
-            var player = GetPlayer(p.ID);
-            if (player != null)
-            {
-                player.Character = p;
-            }
-            return player;
-        }
         public static Player[] GetPlayerArray()
         {
             return Players.Values.ToArray();

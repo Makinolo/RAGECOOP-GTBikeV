@@ -86,8 +86,9 @@ namespace RageCoop.Client
                 }
             }
 
-
+            
             DisplayVehicle();
+            
             // Skip update if no new sync message has arrived.
             if (!NeedUpdate)
             {
@@ -95,6 +96,7 @@ namespace RageCoop.Client
             }
 
             MainVehicle.SteeringAngle = SteeringAngle;
+            MainVehicle.Speed = Speed;
             MainVehicle.ThrottlePower = ThrottlePower;
             MainVehicle.Throttle = ThrottlePower;
             MainVehicle.BrakePower = BrakePower;

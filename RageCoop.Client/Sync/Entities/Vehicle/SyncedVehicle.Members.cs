@@ -13,6 +13,7 @@ namespace RageCoop.Client
         #region -- SYNC DATA --
         internal Vector3 RotationVelocity { get; set; }
         internal float SteeringAngle { get; set; }
+        internal float Speed { get; set; }
         internal float ThrottlePower { get; set; }
         internal float BrakePower { get; set; }
         internal float DeluxoWingRatio { get; set; } = -1;

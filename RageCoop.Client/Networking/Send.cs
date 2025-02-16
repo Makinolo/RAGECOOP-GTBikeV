@@ -128,6 +128,7 @@ namespace RageCoop.Client
             packet.Velocity = veh.Velocity;
             packet.Quaternion = veh.ReadQuaternion();
             packet.RotationVelocity = veh.LocalRotationVelocity;
+            packet.Speed = veh.Speed;
             packet.ThrottlePower = veh.ThrottlePower;
             packet.BrakePower = veh.BrakePower;
             v.LastSentStopWatch.Restart();
