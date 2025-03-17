@@ -13,7 +13,6 @@ namespace RageCoop.Client
         #region -- SYNC DATA --
         internal Vector3 RotationVelocity { get; set; }
         internal float SteeringAngle { get; set; }
-        internal float Speed { get; set; }
         internal float ThrottlePower { get; set; }
         internal float BrakePower { get; set; }
         internal float DeluxoWingRatio { get; set; } = -1;
@@ -30,6 +29,7 @@ namespace RageCoop.Client
         internal VehicleDataFlags Flags { get; set; }
 
         #endregion
+        internal bool IsRelevant { get; set; } = false;
 
         #region FLAGS
 
@@ -52,6 +52,8 @@ namespace RageCoop.Client
         }
         internal bool IsMotorcycle;
         internal bool IsAircraft;
+        internal bool IsTrain;
+        internal bool IsTrailer;
         internal bool HasRocketBoost;
         internal bool HasParachute;
         internal bool HasRoof;

@@ -40,7 +40,7 @@ namespace RageCoop.Client
             p.Health = ped.Health;
             p.Rotation = ped.ReadRotation();
             p.Velocity = ped.ReadVelocity();
-            p.Speed = ped.GetPedSpeed();
+            p.MovingType = ped.GetPedMovingType();
             p.Flags = ped.GetPedFlags();
             p.Heading = ped.Heading;
             if (p.Flags.HasPedFlag(PedDataFlags.IsAiming))
@@ -56,12 +56,12 @@ namespace RageCoop.Client
             else
             {
                 // Seat sync
-                if (p.Speed >= 4)
+                if (p.MovingType >= Packets.PedMovingType.InVehicle)
                 {
                     var veh = ped.CurrentVehicle?.GetSyncEntity() ?? ped.VehicleTryingToEnter?.GetSyncEntity() ?? ped.LastVehicle?.GetSyncEntity();
                     p.VehicleID = veh?.ID ?? 0;
                     if (p.VehicleID == 0) { Main.Logger.Error("Invalid vehicle"); }
-                    if (p.Speed == 5)
+                    if (p.MovingType == Packets.PedMovingType.EnteringVehicle)
                     {
                         p.Seat = ped.GetSeatTryingToEnter();
                     }
@@ -69,7 +69,7 @@ namespace RageCoop.Client
                     {
                         p.Seat = ped.SeatIndex;
                     }
-                    if (!veh.IsLocal && p.Speed == 4 && p.Seat == VehicleSeat.Driver)
+                    if (!veh.IsLocal && p.MovingType == Packets.PedMovingType.InVehicle && p.Seat == VehicleSeat.Driver)
                     {
                         veh.OwnerID = Main.LocalPlayerID;
                         SyncEvents.TriggerChangeOwner(veh.ID, Main.LocalPlayerID);
@@ -128,7 +128,6 @@ namespace RageCoop.Client
             packet.Velocity = veh.Velocity;
             packet.Quaternion = veh.ReadQuaternion();
             packet.RotationVelocity = veh.LocalRotationVelocity;
-            packet.Speed = veh.Speed;
             packet.ThrottlePower = veh.ThrottlePower;
             packet.BrakePower = veh.BrakePower;
             v.LastSentStopWatch.Restart();

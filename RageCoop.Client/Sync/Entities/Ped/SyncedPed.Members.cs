@@ -1,7 +1,12 @@
 ﻿using GTA;
 using GTA.Math;
+using Newtonsoft.Json.Linq;
 using RageCoop.Core;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Xml.Linq;
+using static RageCoop.Core.Packets;
 
 namespace RageCoop.Client
 {
@@ -10,25 +15,68 @@ namespace RageCoop.Client
     /// </summary>
     public partial class SyncedPed : SyncedEntity
     {
+        private bool _isRelevant = false;
+        internal bool IsRelevant 
+        { 
+            get
+            {
+                return _isRelevant; 
+            }
+            set
+            {
+                _isRelevant = value;
+                if(CurrentVehicle != null) {
+                    Main.Logger.Debug($"Setting {DisplayName} vehicle {CurrentVehicle.ID} as Relevant");
+                    CurrentVehicle.IsRelevant = value;
+                }
+            }
+        }
+
+        internal string DisplayName = "";
+        internal Color Color = Color.White;
         internal Blip PedBlip = null;
         internal BlipColor BlipColor = (BlipColor)255;
         internal BlipSprite BlipSprite = 0;
         internal float BlipScale = 1;
+
+        private int _vehicleID = 0; 
         internal int VehicleID
         {
-            get => CurrentVehicle?.ID ?? 0;
+            get => _vehicleID;
             set
             {
-                if (CurrentVehicle == null || value != CurrentVehicle?.ID)
+                if (value != 0 && (CurrentVehicle == null || value != CurrentVehicle?.ID))
                 {
-                    CurrentVehicle = EntityPool.GetVehicleByID(value);
+                    _vehicleID = value;
+                    CurrentVehicle = EntityPool.GetVehicleByID(_vehicleID);
+                    if (CurrentVehicle == null)
+                    {
+                        Main.Logger.Error($"VehicleID set => Setting current vehicle of Ped {this.DisplayName} to a vehicle {value} that is not found");
+                    }
                 }
             }
         }
-        internal SyncedVehicle CurrentVehicle { get; private set; }
-        internal VehicleSeat Seat;
+
+        internal SyncedVehicle CurrentVehicle { get; private set; } = null;
+       
+        internal VehicleSeat Seat {get; set;}
         public bool IsPlayer { get => OwnerID == ID && ID != 0; }
-        public Ped MainPed { get; internal set; }
+        
+        private Ped _mainPed = null;
+        public Ped MainPed 
+        { 
+            get { return _mainPed; }
+
+            internal set
+            { 
+                _mainPed = value;
+                if (_mainPed != null && _mainPed.IsInVehicle())
+                {
+                    CurrentVehicle = new SyncedVehicle(_mainPed.CurrentVehicle);
+                    EntityPool.Add(CurrentVehicle);
+                }
+            } 
+        }
         internal int Health { get; set; }
 
         internal Vector3 HeadPosition { get; set; }
@@ -46,7 +94,7 @@ namespace RageCoop.Client
 
         internal ulong LastSpeakingTime { get; set; } = 0;
         internal bool IsSpeaking { get; set; } = false;
-        public byte Speed { get; set; }
+        internal PedMovingType MovingType { get; set; }
         private bool _lastIsJumping = false;
         internal PedDataFlags Flags;
 

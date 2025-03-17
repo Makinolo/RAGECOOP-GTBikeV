@@ -1,4 +1,5 @@
-﻿using System;
+﻿using GTA.NaturalMotion;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -11,23 +12,34 @@ namespace RageCoop.Core
     /// </summary>
     public class Logger : IDisposable
     {
+        /// <summary>
+        /// Log levels
+        /// </summary>
+        internal enum LogLevels
+        {
+            Trace,
+            Debug,
+            Info,
+            Warning,
+            Error    
+        }
 
         /// <summary>
         /// 0:Trace, 1:Debug, 2:Info, 3:Warning, 4:Error
         /// </summary>
-        public int LogLevel = 0;
+        internal LogLevels LogLevel = 0;
         /// <summary>
         /// Name of this logger
         /// </summary>
-        public string Name { get; set; }
+        internal string Name { get; set; }
         /// <summary>
         /// Path to log file.
         /// </summary>
-        public string LogPath;
+        internal string LogPath;
         /// <summary>
         /// Whether to flush messages to console instead of log file
         /// </summary>
-        public bool UseConsole = false;
+        internal bool UseConsole = false;
         private StreamWriter logWriter;
 
         private string Buffer = "";
@@ -62,22 +74,29 @@ namespace RageCoop.Core
                 LoggerThread.Start();
             }
         }
+
+        private void WriteLine(string message, string logLevel)
+        {
+            string logLine = $"[{DateTime.Now.ToString("yyMMdd HH:mm:ss.fff")}][{Name}] - [{logLevel}] - {message}\n";
+            lock (Buffer)
+            {
+                Buffer += logLine;
+            }
+            if (FlushImmediately)
+            {
+                Flush();
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="message"></param>
         public void Info(string message)
         {
-            if (LogLevel > 2) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Info) 
             {
-                string msg = string.Format("[{0}][{2}] [INF] {1}", Date(), message, Name);
-
-                Buffer += msg + "\r\n";
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(message, "I");
             }
         }
         /// <summary>
@@ -86,17 +105,9 @@ namespace RageCoop.Core
         /// <param name="message"></param>
         public void Warning(string message)
         {
-            if (LogLevel > 3) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Warning)
             {
-                string msg = string.Format("[{0}][{2}] [WRN] {1}", Date(), message, Name);
-
-                Buffer += msg + "\r\n";
-
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(message, "W");
             }
         }
         /// <summary>
@@ -105,16 +116,9 @@ namespace RageCoop.Core
         /// <param name="message"></param>
         public void Error(string message)
         {
-            if (LogLevel > 4) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Error)
             {
-                string msg = string.Format("[{0}][{2}] [ERR] {1}", Date(), message, Name);
-
-                Buffer += msg + "\r\n";
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(message, "E");
             }
         }
         /// <summary>
@@ -124,17 +128,10 @@ namespace RageCoop.Core
         /// <param name="error"></param>
         public void Error(string message, Exception error)
         {
-            if (LogLevel > 4) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Error)
             {
-                string msg = string.Format("[{0}][{2}] [ERR] {1}:{3}", Date(), message, Name, error.Message);
-                Buffer += msg + "\r\n";
-                Trace(error.ToString());
-
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                message = $"{message}:{error.Message}";
+                WriteLine(message, "E");
             }
         }
         /// <summary>
@@ -143,16 +140,9 @@ namespace RageCoop.Core
         /// <param name="ex"></param>
         public void Error(Exception ex)
         {
-            if (LogLevel > 4) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Error)
             {
-                string msg = string.Format("[{0}][{2}] [ERR] {1}", Date(), "\r\n" + ex.Message, Name);
-                Buffer += msg + "\r\n";
-                Trace(ex.ToString());
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(ex.Message, "E");
             }
         }
         /// <summary>
@@ -161,17 +151,9 @@ namespace RageCoop.Core
         /// <param name="message"></param>
         public void Debug(string message)
         {
-
-            if (LogLevel > 1) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Debug)
             {
-                string msg = string.Format("[{0}][{2}] [DBG] {1}", Date(), message, Name);
-
-                Buffer += msg + "\r\n";
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(message, "D");
             }
         }
         /// <summary>
@@ -180,23 +162,12 @@ namespace RageCoop.Core
         /// <param name="message"></param>
         public void Trace(string message)
         {
-            if (LogLevel > 0) { return; }
-            lock (Buffer)
+            if (LogLevel <= LogLevels.Trace)
             {
-                string msg = string.Format("[{0}][{2}] [TRC] {1}", Date(), message, Name);
-
-                Buffer += msg + "\r\n";
-            }
-            if (FlushImmediately)
-            {
-                Flush();
+                WriteLine(message, "T");
             }
         }
 
-        private string Date()
-        {
-            return DateTime.Now.ToString();
-        }
         /// <summary>
         /// 
         /// </summary>

@@ -1,4 +1,5 @@
-﻿using GTA.UI;
+﻿using GTA;
+using GTA.UI;
 using Lidgren.Network;
 using RageCoop.Client.Scripting;
 using RageCoop.Core;
@@ -80,7 +81,7 @@ namespace RageCoop.Client
                 }
 
                 PlayerList.Cleanup();
-                EntityPool.AddPlayer();
+                EntityPool.AddLocalPlayer();
                 if (publicKey == null && !string.IsNullOrEmpty(password) && !Menus.CoopMenu.ShowPopUp("", "WARNING", "Server's IP can be spoofed when using direct connection, do you wish to continue?", "", true))
                 {
                     IsConnecting = false;
@@ -139,8 +140,10 @@ namespace RageCoop.Client
                     }
                     catch (Exception ex)
                     {
-                        Main.Logger.Error("Cannot connect to server: ", ex);
-                        Main.QueueAction(() => Notification.PostTicker("Cannot connect to server: " + ex.Message, false));
+                        string reason = "Cannot connect to server ";
+                        Main.Logger.Error(reason + ": ", ex);
+                        Main.QueueAction(() => Notification.PostTicker(reason + ": " + ex.Message, false));
+                        API.Events.InvokeLocalDisconnection(reason);
                     }
                     IsConnecting = false;
                 });
@@ -158,7 +161,7 @@ namespace RageCoop.Client
             };
             PlayerList.SetPlayer(packet.PedID, packet.Username);
             API.Events.InvokeConnection(p);
-            Main.Logger.Debug($"player connected:{p.Username}");
+            Main.Logger.Info($"Player connected:{p.Username} {p.ID}");
             if (API.Settings.Interactive)
             {
               Main.QueueAction(() =>  Notification.PostTicker($"~h~{p.Username}~h~ connected.", false));
@@ -168,7 +171,7 @@ namespace RageCoop.Client
         {
             var player = PlayerList.GetPlayer(packet.PedID);
             if (player == null) { return; }
-            Scripting.API.Events.InvokeDisconnection(player);
+            API.Events.InvokeDisconnection(player);
             PlayerList.RemovePlayer(packet.PedID);
             Main.QueueAction(() =>
             {

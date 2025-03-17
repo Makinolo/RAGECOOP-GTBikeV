@@ -190,8 +190,7 @@ namespace RageCoop.Server.Scripting
         /// </summary>
         public int Health { get; internal set; }
 
-
-        internal bool _isInvincible;
+       internal bool _isInvincible;
         /// <summary>
         /// Get or set whether this ped is invincible
         /// </summary>

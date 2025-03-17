@@ -1,7 +1,9 @@
 ﻿#undef DEBUG
 using GTA;
 using System;
+using System.IO;
 using System.Windows.Forms;
+using System.Xml.Serialization;
 namespace RageCoop.Client
 {
     /// <summary>
@@ -9,6 +11,14 @@ namespace RageCoop.Client
     /// </summary>
     public class Settings
     {
+        [NonSerialized]
+        private const string SettingsFileName = "RageCoop.Client.Settings.xml";
+        [NonSerialized]
+        private static string UserDataPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\Rockstar Games\\GTA V\\RageCoop\\";
+
+        public delegate void SaveEvent();
+        public event SaveEvent OnSave;
+
         [NonSerialized]
         private string _username = "Player";
         /// <summary>
@@ -84,6 +94,16 @@ namespace RageCoop.Client
         public int WorldPedSoftLimit { get; set; } = 30;
 
         /// <summary>
+        /// The client will only sync Entities within this radius from the player. Set to 0 for no radius (all entities)
+        /// </summary>
+        public float SyncRadius { get; set; } = 500;
+
+        /// <summary>
+        /// The client will only sync Peds that have been named (are relevant) and their vehicles
+        /// </summary>
+        public bool SyncOnlyRelevant {  get; set; } = false;
+
+        /// <summary>
         /// The directory where log and resources downloaded from server will be placed.
         /// </summary>
         public string DataDirectory { get; set; } = "Scripts\\RageCoop\\Data";
@@ -128,5 +148,57 @@ namespace RageCoop.Client
         /// the interaction is handled by the API
         /// </summary>
         public bool Interactive = false;
+
+        /// <summary>
+        /// Saves the settings to the file specified in the Data Directory
+        /// </summary>
+        /// <returns></returns>
+        public bool Save()
+        {
+            try
+            {
+                string path = DataDirectory + SettingsFileName;
+                Directory.CreateDirectory(Directory.GetParent(path).FullName);
+
+                using (FileStream stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite))
+                {
+                    XmlSerializer ser = new XmlSerializer(typeof(Settings));
+                    ser.Serialize(stream, this);
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+                // GTA.UI.Notification.Show("Error saving player settings: " + ex.Message);
+            }
+            OnSave?.Invoke();
+            return true;
+        }
+
+       
+        public static Settings Load()
+        {
+            Settings settings;
+            string path = UserDataPath + SettingsFileName;
+            XmlSerializer ser = new XmlSerializer(typeof(Settings));
+            
+            Directory.CreateDirectory(Directory.GetParent(path).FullName);
+
+            if (File.Exists(path))
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    settings = (Settings)ser.Deserialize(stream);
+                }
+            }
+            else
+            {
+                settings = new Settings();
+                settings.DataDirectory = UserDataPath;
+                settings.Save();
+            }
+
+            return settings;
+        }
     }
 }

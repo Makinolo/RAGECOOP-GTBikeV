@@ -23,7 +23,6 @@ namespace RageCoop.Client
         /// </summary>
         public int ID { get; internal set; }
 
-
         private int _ownerID;
         /// <summary>
         /// 
@@ -69,7 +68,6 @@ namespace RageCoop.Client
         /// Last time the local entity has been updated,
         /// </summary>
         public ulong LastUpdated { get; set; } = 0;
-
 
         internal Stopwatch LastSentStopWatch { get; set; } = Stopwatch.StartNew();
         #endregion

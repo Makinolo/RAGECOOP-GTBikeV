@@ -7,8 +7,10 @@ using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Net.Sockets;
 using System.Xml.Linq;
 
 namespace RageCoop.Client
@@ -40,29 +42,38 @@ namespace RageCoop.Client
         /// <summary>
         /// Create an empty character with ID
         /// </summary>
-        internal SyncedPed(int id)
+        internal SyncedPed(Packets.PedSync packet)
         {
-            ID = id;
+            ID = packet.ID;
             LastSynced = Main.Ticked;
+
+            OwnerID = packet.OwnerID;
+            if (IsPlayer)
+            {
+                Player player = PlayerList.GetPlayer(ID);
+                SetProperties(player.Username, player.HasDirectConnection ? Color.FromArgb(179, 229, 252) : Color.White, BlipColor.White);
+            }
+        }
+
+        internal void SetProperties(string Name, Color color, BlipColor blipColor)
+        {
+            DisplayName = Name;
+            Color = color;
+            BlipColor = blipColor;
+            IsRelevant = true;
+            Main.Logger.Debug($"Setting properties for {ID} {DisplayName}");
         }
 
         internal override void Update()
         {
             if (Owner == null) { OwnerID = OwnerID; return; }
-            if (IsPlayer)
-            {
-                RenderNameTag();
-                if (Owner.Character == null)
-                {
-                    Owner.Character = this;
-                }
+            
+            if (IsPlayer && Owner.Character == null)
+            { 
+                Owner.Character = this;
             }
-
-            // Check if all data avalible
-            if (!IsReady) { return; }
-
-            // Skip update if no new sync message has arrived.
-            if (!NeedUpdate) { return; }
+            
+            RenderNameTag();
 
             if (MainPed == null || !MainPed.Exists())
             {
@@ -71,7 +82,17 @@ namespace RageCoop.Client
                     return;
                 }
             }
+            // Check if all data avalible
+            if (!IsReady) { return; }
 
+            // Skip update if no new sync message has arrived.
+            if (!NeedUpdate) { return; }
+            // Adjust the position of the Ped if it jumped (teleported)
+            if (MainPed != null && Position != Vector3.Zero && World.GetDistance(MainPed.Position, Position) > 250)
+            {
+                Main.Logger.Debug($"MainPed position {MainPed.Position} is far from Syncped position {Position}. ADJUSTING");
+                MainPed.PositionNoOffset = Position;
+            }
             // Need to update state
             if (LastFullSynced >= LastUpdated)
             {
@@ -154,7 +175,7 @@ namespace RageCoop.Client
                 return;
             }
 
-            if (Speed >= 4)
+            if (MovingType >= Packets.PedMovingType.InVehicle)
             {
                 DisplayInVehicle();
             }
@@ -184,22 +205,27 @@ namespace RageCoop.Client
 
         private void RenderNameTag()
         {
-            if (!Owner.DisplayNameTag || !API.Settings.ShowPlayerNameTag || MainPed == null || !MainPed.IsVisible || !MainPed.IsInRange(Main.PlayerPosition, 40f))
+            if (!Owner.DisplayNameTag || !API.Settings.ShowPlayerNameTag || MainPed == null || !IsRelevant ||
+                !MainPed.IsVisible || !MainPed.IsInRange(Main.PlayerPosition, 40f))
             {
                 return;
             }
 
-            Vector3 targetPos = MainPed.Bones[Bone.IKHead].Position + new Vector3(0, 0, 0.5f) + MainPed.Velocity / Game.FPS;
-            TextElement _nameTag = new TextElement( Owner.Username, 
-                                                    new PointF(0, 0), 
-                                                    1f,
-                                                    Owner.HasDirectConnection ? Color.FromArgb(179, 229, 252) : Color.White,
-                                                    GTA.UI.Font.ChaletLondon,
-                                                    Alignment.Center, false, true);
-            Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
-            _nameTag.Scale = 0.4f - GameplayCamera.Position.DistanceTo(Position) * 0.01f;
-            _nameTag.Draw();
-            Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+            float scale = 0.4f - GameplayCamera.Position.DistanceTo(Position) * 0.01f;
+            if (scale > 0)
+            {
+                Vector3 targetPos = MainPed.Bones[Bone.IKHead].Position + new Vector3(0, 0, 0.5f) + MainPed.Velocity / Game.FPS;
+                TextElement _nameTag = new TextElement(DisplayName,
+                                                        new PointF(0, 0),
+                                                        1f,
+                                                        Color,
+                                                        GTA.UI.Font.ChaletLondon,
+                                                        Alignment.Center, false, true);
+                Function.Call(Hash.SET_DRAW_ORIGIN, targetPos.X, targetPos.Y, targetPos.Z, 0);
+                _nameTag.Scale = scale;
+                _nameTag.Draw();
+                Function.Call(Hash.CLEAR_DRAW_ORIGIN);
+            }
         }
 
         private bool CreateCharacter()
@@ -228,7 +254,7 @@ namespace RageCoop.Client
                 return false;
             }
 
-            if ((MainPed = Util.CreatePed(Model, Position)) == null)
+            if ((MainPed = World.CreatePed(Model, Position)) == null)
             {
                 return false;
             }
@@ -447,7 +473,7 @@ namespace RageCoop.Client
             }
             if (MainPed.IsRagdoll)
             {
-                if (Speed == 0)
+                if (MovingType == Packets.PedMovingType.None)
                 {
                     MainPed.CancelRagdoll();
                 }
@@ -518,7 +544,9 @@ namespace RageCoop.Client
 
         private void CheckCurrentWeapon()
         {
-            if (MainPed.Weapons.Current.Hash != (WeaponHash)CurrentWeaponHash || !WeaponComponents.Compare(_lastWeaponComponents) || (Speed <= 3 && _weaponObj?.IsVisible != true))
+            if (MainPed.Weapons.Current.Hash != (WeaponHash)CurrentWeaponHash || 
+                !WeaponComponents.Compare(_lastWeaponComponents) || 
+                (MovingType <= Packets.PedMovingType.Sprinting && _weaponObj?.IsVisible != true))
             {
                 new WeaponAsset(CurrentWeaponHash).Request();
 
@@ -570,9 +598,9 @@ namespace RageCoop.Client
             Vector3 predictPosition = Predict(Position) + Velocity;
             float range = predictPosition.DistanceToSquared(MainPed.ReadPosition());
 
-            switch (Speed)
+            switch (MovingType)
             {
-                case 1:
+                case Packets.PedMovingType.Walking:
                     if (!MainPed.IsWalking || range > 0.25f)
                     {
                         float nrange = range * 2;
@@ -586,7 +614,7 @@ namespace RageCoop.Client
                     }
                     LastMoving = true;
                     break;
-                case 2:
+                case Packets.PedMovingType.Running:
                     if (!MainPed.IsRunning || range > 0.50f)
                     {
                         MainPed.Task.RunTo(predictPosition, true);
@@ -594,7 +622,7 @@ namespace RageCoop.Client
                     }
                     LastMoving = true;
                     break;
-                case 3:
+                case Packets.PedMovingType.Sprinting:
                     if (!MainPed.IsSprinting || range > 0.75f)
                     {
                         Function.Call(Hash.TASK_GO_STRAIGHT_TO_COORD, MainPed.Handle, predictPosition.X, predictPosition.Y, predictPosition.Z, 3.0f, -1, 0.0f, 0.0f);
@@ -687,10 +715,16 @@ namespace RageCoop.Client
 
         private void DisplayInVehicle()
         {
-            if (CurrentVehicle?.MainVehicle == null) { return; }
-            switch (Speed)
+            if (CurrentVehicle?.MainVehicle == null) 
             {
-                case 4:
+                //Main.Logger.Warning($"Current vehicle -{CurrentVehicle?.ID}- main vehicle is null when moving type is vehicular");
+                // TODO: Find this ped's vehicle
+
+                return; 
+            }
+            switch (MovingType)
+            {
+                case Packets.PedMovingType.InVehicle:
                     if (MainPed.CurrentVehicle != CurrentVehicle.MainVehicle || MainPed.SeatIndex != Seat || (!MainPed.IsSittingInVehicle() && !MainPed.IsBeingJacked))
                     {
                         MainPed.SetIntoVehicle(CurrentVehicle.MainVehicle, Seat);
@@ -724,13 +758,13 @@ namespace RageCoop.Client
                         MainPed.VehicleWeapon = (VehicleWeaponHash)CurrentWeaponHash;
                     }
                     break;
-                case 5:
+                case Packets.PedMovingType.EnteringVehicle:
                     if (MainPed.VehicleTryingToEnter != CurrentVehicle.MainVehicle || MainPed.GetSeatTryingToEnter() != Seat)
                     {
                         MainPed.Task.EnterVehicle(CurrentVehicle.MainVehicle, Seat, -1, 5, EnterVehicleFlags.JackAnyone);
                     }
                     break;
-                case 6:
+                case Packets.PedMovingType.ExitingVehicle:
                     if (!MainPed.IsTaskActive(TaskType.CTaskExitVehicle))
                     {
                         MainPed.Task.LeaveVehicle(CurrentVehicle.Velocity.Length() > 5f ? LeaveVehicleFlags.BailOut : LeaveVehicleFlags.None);

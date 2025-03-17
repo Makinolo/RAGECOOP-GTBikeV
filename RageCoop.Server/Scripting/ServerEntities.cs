@@ -156,7 +156,7 @@ namespace RageCoop.Server.Scripting
             ped.Health = p.Health;
             ped._rot = p.Rotation;
             ped._isInvincible = p.Flags.HasPedFlag(PedDataFlags.IsInvincible);
-            if (p.Speed >= 4 && Vehicles.TryGetValue(p.VehicleID, out var v))
+            if (p.MovingType >= Packets.PedMovingType.InVehicle && Vehicles.TryGetValue(p.VehicleID, out var v))
             {
                 ped.LastVehicle = v;
             }

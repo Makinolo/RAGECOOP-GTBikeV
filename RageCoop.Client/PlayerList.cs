@@ -77,7 +77,6 @@ namespace RageCoop.Client
         }
         public static void SetPlayer(int id, string username, float latency = 0)
         {
-            Main.Logger.Debug($"{id},{username},{latency}");
             if (Players.TryGetValue(id, out Player p))
             {
                 p.Username = username;

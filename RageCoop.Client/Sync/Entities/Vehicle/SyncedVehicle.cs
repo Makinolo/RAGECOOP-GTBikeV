@@ -2,7 +2,6 @@
 using GTA.Math;
 using GTA.Native;
 using RageCoop.Core;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -35,6 +34,8 @@ namespace RageCoop.Client
             if (MainVehicle == null) { return; }
 
             IsAircraft = MainVehicle.IsAircraft;
+            IsTrain = MainVehicle.IsTrain;
+            IsTrailer = MainVehicle.IsTrailer;
             IsMotorcycle = MainVehicle.IsMotorcycle;
             HasRocketBoost = MainVehicle.HasRocketBoost;
             HasParachute = MainVehicle.HasParachute;
@@ -50,9 +51,9 @@ namespace RageCoop.Client
         {
 
         }
-        internal SyncedVehicle(int id)
+        internal SyncedVehicle(Packets.VehicleSync packet)
         {
-            ID = id;
+            ID = packet.ID;
             LastSynced = Main.Ticked;
         }
         #endregion
@@ -72,8 +73,6 @@ namespace RageCoop.Client
                 World.DrawMarker(MarkerType.DebugSphere, s, default, default, new Vector3(0.3f, 0.3f, 0.3f), Color.Orange);
             }
 #endif
-
-
             // Check if all data avalible
             if (!IsReady || Owner == null) { return; }
 
@@ -86,7 +85,12 @@ namespace RageCoop.Client
                 }
             }
 
-            
+            if (MainVehicle != null && Position != Vector3.Zero && World.GetDistance(MainVehicle.Position, Position) > 250)
+            {
+                Main.Logger.Debug($"MainVehicle position {MainVehicle.Position} is far from SyncVehicle position {Position}. ADJUSTING");
+                MainVehicle.PositionNoOffset = Position;
+            }
+
             DisplayVehicle();
             
             // Skip update if no new sync message has arrived.
@@ -94,12 +98,20 @@ namespace RageCoop.Client
             {
                 return;
             }
+            if (IsTrain || IsTrailer)
+            {
+                if (IsTrain) { MainVehicle.CenterOfGravityOffset = Vector3.Zero; }
+                if (IsTrailer) { MainVehicle.SetTrailerLegsRaised(); }
 
-            MainVehicle.SteeringAngle = SteeringAngle;
-            MainVehicle.Speed = Speed;
-            MainVehicle.ThrottlePower = ThrottlePower;
-            MainVehicle.Throttle = ThrottlePower;
-            MainVehicle.BrakePower = BrakePower;
+                //Main.Logger.Debug($"Synced {MainVehicle.DisplayName} {MainVehicle.Mods.GetVehicleMods().} {MainVehicle.Mods.LocalizedLiveryName} data cgo:{MainVehicle.CenterOfGravityOffset} fpos:{MainVehicle.FrontPosition} above:{MainVehicle.HeightAboveGround} lrv:{MainVehicle.LocalRotationVelocity} vel:{MainVehicle.Velocity}");
+            }
+            else
+            {
+                MainVehicle.SteeringAngle = SteeringAngle;
+                MainVehicle.ThrottlePower = ThrottlePower;
+                MainVehicle.Throttle = ThrottlePower;
+                MainVehicle.BrakePower = BrakePower;
+            }
 
             if (IsDead)
             {
@@ -237,7 +249,7 @@ namespace RageCoop.Client
                 MainVehicle.EngineHealth = EngineHealth;
                 if (Mods != null && !Mods.Compare(_lastVehicleMods))
                 {
-                    Function.Call(Hash.SET_VEHICLE_MOD_KIT, MainVehicle, 0);
+                    MainVehicle.Mods.InstallModKit();
 
                     foreach (KeyValuePair<int, int> mod in Mods)
                     {
@@ -280,9 +292,9 @@ namespace RageCoop.Client
             {
                 MainVehicle.Velocity = Velocity + cali;
             }
-
-            Vector3 calirot;
-            if (IsFlipped || (calirot = GetCalibrationRotation()).Length() > 50)
+            
+            Vector3 calirot = GetCalibrationRotation();
+            if (IsFlipped || calirot.Length() > 50)
             {
                 MainVehicle.Quaternion = Quaternion.Slerp(MainVehicle.ReadQuaternion(), Quaternion, 0.5f);
                 MainVehicle.LocalRotationVelocity = RotationVelocity;
@@ -308,18 +320,24 @@ namespace RageCoop.Client
         }
         private bool CreateVehicle()
         {
+            // Check if there are any other vehicles in Position or too close to Position
+            /*
             var existing = World.GetNearbyVehicles(Position, 2).ToList().FirstOrDefault();
             if (existing != null && existing != MainVehicle)
             {
                 if (EntityPool.VehiclesByHandle.ContainsKey(existing.Handle))
                 {
+                    Main.Logger.Debug($"Removing vehicle {ID}");
                     EntityPool.RemoveVehicle(ID);
                     return false;
                 }
                 existing.Delete();
             }
+            */
             MainVehicle?.Delete();
-            MainVehicle = Util.CreateVehicle(Model, Position);
+            MainVehicle = World.CreateVehicle(Model, Position);
+            Main.Logger.Debug($"Creating vehicle {ID} at position {Position}");
+
             if (!Model.IsInCdImage)
             {
                 // GTA.UI.Notification.Show($"~r~(Vehicle)Model ({CurrentVehicleModelHash}) cannot be loaded!");

@@ -43,12 +43,12 @@ namespace RageCoop.Client.Menus
             _showBlip.Activated += (s, e) =>
             {
                 API.Settings.ShowPlayerBlip = _showBlip.Checked;
-                Util.SaveSettings();
+                API.Settings.Save();
             };
             _showNametag.Activated += (s, e) =>
             {
                 API.Settings.ShowPlayerNameTag = _showNametag.Checked;
-                Util.SaveSettings();
+                API.Settings.Save();
             };
 
             Menu.Add(_disableTrafficItem);
@@ -78,13 +78,13 @@ namespace RageCoop.Client.Menus
             }
 
             API.Settings.Voice = _disableVoice.Checked;
-            Util.SaveSettings();
+            API.Settings.Save();
         }
 
         private static void DisablePauseAltCheckboxChanged(object sender, EventArgs e)
         {
             API.Settings.DisableAlternatePause = _disablePauseAlt.Checked;
-            Util.SaveSettings();
+            API.Settings.Save();
         }
         private static void VehicleSoftLimitActivated(object sender, EventArgs e)
         {
@@ -94,7 +94,7 @@ namespace RageCoop.Client.Menus
                     Game.GetUserInput(WindowTitle.EnterMessage20,
                     API.Settings.WorldVehicleSoftLimit.ToString(), 20));
                 _vehicleSoftLimit.AltTitle = API.Settings.WorldVehicleSoftLimit.ToString();
-                Util.SaveSettings();
+                API.Settings.Save();
             }
             catch { }
         }
@@ -106,7 +106,7 @@ namespace RageCoop.Client.Menus
                     Game.GetUserInput(WindowTitle.EnterMessage20,
                     API.Settings.WorldPedSoftLimit.ToString(), 20));
                 _pedSoftLimit.AltTitle = API.Settings.WorldPedSoftLimit.ToString();
-                Util.SaveSettings();
+                API.Settings.Save();
             }
             catch { }
         }
@@ -119,7 +119,7 @@ namespace RageCoop.Client.Menus
                     Game.GetUserInput(WindowTitle.EnterMessage20,
                     API.Settings.MenuKey.ToString(), 20));
                 _menuKey.AltTitle = API.Settings.MenuKey.ToString();
-                Util.SaveSettings();
+                API.Settings.Save();
             }
             catch { }
         }
@@ -133,7 +133,7 @@ namespace RageCoop.Client.Menus
                     Game.GetUserInput(WindowTitle.EnterMessage20,
                     API.Settings.PassengerKey.ToString(), 20));
                 _passengerKey.AltTitle = API.Settings.PassengerKey.ToString();
-                Util.SaveSettings();
+                API.Settings.Save();
             }
             catch { }
         }
@@ -142,7 +142,7 @@ namespace RageCoop.Client.Menus
         {
             WorldThread.Traffic(!_disableTrafficItem.Checked);
             API.Settings.DisableTraffic = _disableTrafficItem.Checked;
-            Util.SaveSettings();
+            API.Settings.Save();
         }
 
         public static void FlipMenuCheckboxChanged(object a, System.EventArgs b)
@@ -151,7 +151,7 @@ namespace RageCoop.Client.Menus
 
             Menu.Alignment = _flipMenuItem.Checked ? GTA.UI.Alignment.Right : GTA.UI.Alignment.Left;
             API.Settings.FlipMenu = _flipMenuItem.Checked;
-            Util.SaveSettings();
+            API.Settings.Save();
         }
     }
 }

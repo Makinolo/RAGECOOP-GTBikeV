@@ -84,54 +84,6 @@ namespace RageCoop.Client
 
 
         #endregion
-        public static string SettingsPath = "Scripts\\RageCoop\\Data\\RageCoop.Client.Settings.xml";
-        public static Settings ReadSettings(string path = null)
-        {
-            path = path ?? SettingsPath;
-            XmlSerializer ser = new XmlSerializer(typeof(Settings));
-
-            Directory.CreateDirectory(Directory.GetParent(path).FullName);
-            Settings settings = null;
-
-            if (File.Exists(path))
-            {
-                using (FileStream stream = File.OpenRead(path))
-                {
-                    settings = (Settings)ser.Deserialize(stream);
-                }
-            }
-            else
-            {
-                using (FileStream stream = File.OpenWrite(path))
-                {
-                    ser.Serialize(stream, settings = new Settings());
-                }
-            }
-
-            return settings;
-        }
-        public static bool SaveSettings(string path = null, Settings settings = null)
-        {
-            try
-            {
-                path = path ?? SettingsPath;
-                settings = settings ?? API.Settings;
-                Directory.CreateDirectory(Directory.GetParent(path).FullName);
-
-                using (FileStream stream = new FileStream(path, File.Exists(path) ? FileMode.Truncate : FileMode.Create, FileAccess.ReadWrite))
-                {
-                    XmlSerializer ser = new XmlSerializer(typeof(Settings));
-                    ser.Serialize(stream, settings);
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                return false;
-                // GTA.UI.Notification.Show("Error saving player settings: " + ex.Message);
-            }
-        }
-
 
         public static Vehicle CreateVehicle(Model model, Vector3 position, float heading = 0f)
         {

@@ -130,7 +130,7 @@ namespace RageCoop.Client.Menus
             if (!string.IsNullOrWhiteSpace(newUsername))
             {
                 API.Settings.Username = newUsername;
-                Util.SaveSettings();
+                API.Settings.Save();
 
                 _usernameItem.AltTitle = newUsername;
             }
@@ -140,7 +140,7 @@ namespace RageCoop.Client.Menus
         {
             string newPass = Game.GetUserInput(WindowTitle.EnterMessage20, "", 20);
             API.Settings.Password = newPass;
-            Util.SaveSettings();
+            API.Settings.Save();
             _passwordItem.AltTitle = new string('*', newPass.Length);
         }
         public static void ServerIpActivated(object a, System.EventArgs b)
@@ -149,7 +149,7 @@ namespace RageCoop.Client.Menus
             if (!string.IsNullOrWhiteSpace(newServerIp) && newServerIp.Contains(":"))
             {
                 API.Settings.LastServerAddress = newServerIp;
-                Util.SaveSettings();
+                API.Settings.Save();
 
                 ServerIpItem.AltTitle = newServerIp;
             }

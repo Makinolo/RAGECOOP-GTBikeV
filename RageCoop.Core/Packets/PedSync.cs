@@ -7,15 +7,22 @@ namespace RageCoop.Core
 {
     internal partial class Packets
     {
-
+        public enum PedMovingType
+        {
+            None = 0,
+            Walking = 1,
+            Running = 2,
+            Sprinting = 3,
+            InVehicle = 4,
+            EnteringVehicle = 5,
+            ExitingVehicle = 6
+        }
 
         internal class PedSync : Packet
         {
             public override PacketType Type => PacketType.PedSync;
             public int ID { get; set; }
-
             public int OwnerID { get; set; }
-
             public int VehicleID { get; set; }
             public VehicleSeat Seat { get; set; }
             public PedDataFlags Flags { get; set; }
@@ -35,10 +42,9 @@ namespace RageCoop.Core
 
             #endregion
 
-            public byte Speed { get; set; }
+            public PedMovingType MovingType { get; set; }
 
             public Vector3 AimCoords { get; set; }
-
 
             public float Heading { get; set; }
 
@@ -61,23 +67,20 @@ namespace RageCoop.Core
 
             protected override void Serialize(NetOutgoingMessage m)
             {
-
-
                 m.Write(ID);
                 m.Write(OwnerID);
                 m.Write((ushort)Flags);
                 m.Write(Health);
-                m.Write(Speed);
+                m.Write((byte)MovingType);
                 if (Flags.HasPedFlag(PedDataFlags.IsRagdoll))
                 {
                     m.Write(HeadPosition);
                     m.Write(RightFootPosition);
                     m.Write(LeftFootPosition);
-
                 }
                 else
                 {
-                    if (Speed >= 4)
+                    if (MovingType >= PedMovingType.InVehicle)
                     {
                         m.Write(VehicleID);
                         m.Write((byte)(Seat + 3));
@@ -86,7 +89,6 @@ namespace RageCoop.Core
                 }
                 m.Write(Rotation);
                 m.Write(Velocity);
-
 
                 if (Flags.HasPedFlag(PedDataFlags.IsAiming))
                 {
@@ -125,20 +127,17 @@ namespace RageCoop.Core
                         m.Write(BlipScale);
                     }
                 }
-
-
             }
 
             public override void Deserialize(NetIncomingMessage m)
             {
                 #region NetIncomingMessageToPacket
 
-
                 ID = m.ReadInt32();
                 OwnerID = m.ReadInt32();
                 Flags = (PedDataFlags)m.ReadUInt16();
                 Health = m.ReadInt32();
-                Speed = m.ReadByte();
+                MovingType = (PedMovingType)m.ReadByte();
 
                 if (Flags.HasPedFlag(PedDataFlags.IsRagdoll))
                 {
@@ -150,7 +149,7 @@ namespace RageCoop.Core
                 else
                 {
                     // Vehicle related
-                    if (Speed >= 4)
+                    if (MovingType >= PedMovingType.InVehicle)
                     {
                         VehicleID = m.ReadInt32();
                         Seat = (VehicleSeat)(m.ReadByte() - 3);

@@ -4,6 +4,7 @@ using RageCoop.Client.Menus;
 using RageCoop.Client.Scripting;
 using RageCoop.Core;
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Threading;
 
@@ -312,17 +313,17 @@ namespace RageCoop.Client
                     /*EntityPool.VehiclesByID.Any(x => x.Value.Position.DistanceTo(packet.Position) < 2) ||*/ // allows players to exceed the peds limit
                     packet.ID == packet.OwnerID)
                 {
-                    // Main.Logger.Debug($"Creating character for incoming sync:{packet.ID}");
-                    EntityPool.ThreadSafe.Add(c = new SyncedPed(packet.ID));
+                    Main.Logger.Debug($"Creating character for incoming sync:{packet.ID} {packet.Position}");
+                    EntityPool.ThreadSafe.Add(c = new SyncedPed(packet));
                 }
                 else return;
             }
             c.ID = packet.ID;
-            c.OwnerID = packet.OwnerID;
+            c.OwnerID = packet.OwnerID;;
             c.Health = packet.Health;
             c.Rotation = packet.Rotation;
             c.Velocity = packet.Velocity;
-            c.Speed = packet.Speed;
+            c.MovingType = packet.MovingType;
             c.Flags = packet.Flags;
             c.Heading = packet.Heading;
             c.Position = packet.Position;
@@ -333,7 +334,7 @@ namespace RageCoop.Client
                 c.RightFootPosition = packet.RightFootPosition;
                 c.LeftFootPosition = packet.LeftFootPosition;
             }
-            else if (c.Speed >= 4)
+            else if (c.MovingType >= Packets.PedMovingType.InVehicle)
             {
                 c.VehicleID = packet.VehicleID;
                 c.Seat = packet.Seat;
@@ -362,13 +363,17 @@ namespace RageCoop.Client
             SyncedVehicle v = EntityPool.GetVehicleByID(packet.ID);
             if (v == null)
             {
-                if (EntityPool.VehicleCounterById.GetOrAdd(packet.OwnerID,0) < API.Settings.WorldVehicleSoftLimit / PlayerList.PlayerCount ||
+                if (EntityPool.VehicleCounterById.GetOrAdd(packet.OwnerID, 0) < API.Settings.WorldVehicleSoftLimit / PlayerList.PlayerCount ||
                     EntityPool.PedsByID.Any(x => x.Value.VehicleID == packet.ID || x.Value.Position.DistanceTo(packet.Position) < 2))
                 {
-                    // Main.Logger.Debug($"Creating vehicle for incoming sync:{packet.ID}");
-                    EntityPool.ThreadSafe.Add(v = new SyncedVehicle(packet.ID));
+                    Main.Logger.Debug($"Creating vehicle for incoming sync:{packet.ID}");
+                    EntityPool.ThreadSafe.Add(v = new SyncedVehicle(packet));
                 }
-                else return;
+                else 
+                {
+                    Main.Logger.Warning($"Skipped creation of vehicle for incoming sync:{packet.ID}");  
+                    return; 
+                }
             }
             if (v.IsLocal) { return; }
             v.ID = packet.ID;
@@ -377,7 +382,6 @@ namespace RageCoop.Client
             v.Position = packet.Position;
             v.Quaternion = packet.Quaternion;
             v.SteeringAngle = packet.SteeringAngle;
-            v.Speed = packet.Speed;
             v.ThrottlePower = packet.ThrottlePower;
             v.BrakePower = packet.BrakePower;
             v.Velocity = packet.Velocity;

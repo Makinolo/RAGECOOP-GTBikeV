@@ -26,8 +26,6 @@ namespace RageCoop.Core
 
             public Vector3 RotationVelocity { get; set; }
 
-            public float Speed { get; set; }
-
             public float ThrottlePower { get; set; }
             public float BrakePower { get; set; }
             public float SteeringAngle { get; set; }
@@ -59,8 +57,6 @@ namespace RageCoop.Core
 
             protected override void Serialize(NetOutgoingMessage m)
             {
-
-
                 m.Write(ID);
                 m.Write(OwnerID);
                 m.Write((ushort)Flags);
@@ -68,7 +64,6 @@ namespace RageCoop.Core
                 m.Write(Quaternion);
                 m.Write(Velocity);
                 m.Write(RotationVelocity);
-                m.Write(Speed);
                 m.Write(ThrottlePower);
                 m.Write(BrakePower);
                 m.Write(SteeringAngle);
@@ -151,11 +146,9 @@ namespace RageCoop.Core
                 Quaternion = m.ReadQuaternion();
                 Velocity = m.ReadVector3();
                 RotationVelocity = m.ReadVector3();
-                Speed = m.ReadFloat();
                 ThrottlePower = m.ReadFloat();
                 BrakePower = m.ReadFloat();
                 SteeringAngle = m.ReadFloat();
-
 
                 if (Flags.HasVehFlag(VehicleDataFlags.IsDeluxoHovering))
                 {
@@ -212,7 +205,6 @@ namespace RageCoop.Core
                             RightHeadLightBroken = m.ReadByte()
                         };
                     }
-
 
                     // Read LockStatus
                     LockStatus = (VehicleLockStatus)m.ReadByte();

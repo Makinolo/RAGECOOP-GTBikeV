@@ -4,6 +4,8 @@ using GTA.Native;
 using RageCoop.Core;
 using System;
 using System.Collections.Generic;
+using static RageCoop.Core.Packets;
+using static SHVDN.NativeMemory.Ped;
 
 namespace RageCoop.Client
 {
@@ -41,37 +43,35 @@ namespace RageCoop.Client
 
 
         #region PED
-
-        public static byte GetPedSpeed(this Ped ped)
+        public static PedMovingType GetPedMovingType(this Ped ped)
         {
 
-            if (ped.IsSittingInVehicle())
+            if (ped.IsInVehicle())
             {
-                return 4;
+                return PedMovingType.InVehicle;
             }
             if (ped.IsTaskActive(TaskType.CTaskEnterVehicle))
             {
-                return 5;
+                return PedMovingType.EnteringVehicle;
             }
             if (ped.IsTaskActive(TaskType.CTaskExitVehicle))
             {
-                return 6;
+                return PedMovingType.ExitingVehicle;
             }
             if (ped.IsWalking)
             {
-                return 1;
+                return PedMovingType.Walking;
             }
             if (ped.IsRunning)
             {
-                return 2;
+                return PedMovingType.Running;
             }
             if (ped.IsSprinting)
             {
-                return 3;
+                return PedMovingType.Sprinting;
             }
 
-
-            return 0;
+            return PedMovingType.None;
         }
 
         // Not sure whether component will always be lesser than 255, whatever...

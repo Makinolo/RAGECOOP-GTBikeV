@@ -5,6 +5,7 @@ using RageCoop.Core;
 using RageCoop.Core.Scripting;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace RageCoop.Client.Scripting
@@ -128,7 +129,7 @@ namespace RageCoop.Client.Scripting
             {
                 var args = new ClientCustomEventReceivedArgs() { Hash = p.Hash, Args = p.Args };
 
-                // Main.Logger.Debug($"CustomEvent:\n"+args.Args.DumpWithType());
+                //Main.Logger.Debug($"CustomEvent:\n"+args.Args.DumpWithType());
 
                 if (CustomEventHandlers.TryGetValue(p.Hash, out List<Action<CustomEventReceivedArgs>> handlers))
                 {
@@ -224,6 +225,17 @@ namespace RageCoop.Client.Scripting
         public static List<ServerInfo> ListServers()
         {
             return JsonConvert.DeserializeObject<List<ServerInfo>>(HttpHelper.DownloadString(API.Settings.MasterServer));
+        }
+
+        /// <summary>
+        /// Shows and focuses the chat interface or hides it when not needed
+        /// </summary>
+        public static void ShowChatInterface(bool show)
+        {
+            if (Networking.IsOnServer)
+            {
+                Main.MainChat.Focused = show;
+            }
         }
 
         /// <summary>
@@ -340,6 +352,40 @@ namespace RageCoop.Client.Scripting
         {
             return PlayerList.GetPlayerArray();
         }
+
+        #region Ped Handling
+        /// <summary>
+        /// Retrieves the Id assigned in the server to this instance of a Ped
+        /// </summary>
+        /// <returns>Id of the ped</returns>
+        public static int GetPedNetworkId(Ped ped)
+        {
+            return EntityPool.GetPedId(ped);
+        }
+
+        /// <summary>
+        /// Retrieves a reference to the Ped in the game that has this id in the server
+        /// </summary>
+        /// <returns>Ped for the id</returns>
+        public static Ped GetPedByNetworkId(int id)
+        {
+            return EntityPool.GetPedByID(id)?.MainPed;
+        }
+
+        public static void SetPedProperties(int id, string name, Color color, BlipColor blipColor)
+        {
+            SyncedPed sp = EntityPool.GetPedByID(id);
+            if (sp != null)
+            {
+                sp.SetProperties(name, color, blipColor);
+            }
+        }
+
+        public static void ShowPlayerList()
+        {
+            PlayerList.Request();
+        }
+        #endregion
         #endregion
     }
 }

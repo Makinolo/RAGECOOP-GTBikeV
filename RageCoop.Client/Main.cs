@@ -28,7 +28,7 @@ namespace RageCoop.Client
 
         internal static Chat MainChat = null;
         internal static Stopwatch Counter { get; } = new Stopwatch();
-        internal static Logger Logger = null;
+        internal static Logger Logger { get; set; } = null;
 
         internal static ulong Ticked = 0;
         internal static Vector3 PlayerPosition;
@@ -45,27 +45,20 @@ namespace RageCoop.Client
         public Main()
         {
             Worker = new Worker("RageCoop.Client.Main.Worker", Logger);
+            
             try
             {
-                API.Settings = Util.ReadSettings();
+                API.Settings = Client.Settings.Load();
             }
             catch
             {
                 GTA.UI.Notification.PostTicker("Malformed configuration, overwriting with default values...", false);
                 API.Settings = new Settings();
-                Util.SaveSettings();
+                API.Settings.Save();
             }
             Directory.CreateDirectory(API.Settings.DataDirectory);
-            Logger = new Logger()
-            {
-                LogPath = $"{API.Settings.DataDirectory}\\RageCoop.Client.log",
-                UseConsole = false,
-#if DEBUG
-                LogLevel = 0,
-#else
-                LogLevel=Settings.LogLevel,
-#endif
-            };
+            API.Settings.OnSave += OnSettingsSave;
+
             Resources = new Scripting.Resources();
 
             BaseScript.OnStart();
@@ -87,6 +80,21 @@ namespace RageCoop.Client
         public static Ped P;
         public static float FPS;
         private bool _lastDead;
+
+        public void OnSettingsSave()
+        {
+            string newPath = $"{API.Settings.DataDirectory}\\Logs\\{DateTime.Now.ToString("yyyyMMdd-HHmmss")}_RageCoop.Client.log";
+            if (Logger == null || Logger.LogPath != newPath)
+            {
+                Logger = new Logger()
+                {
+                    LogPath = newPath,
+                    UseConsole = false,
+                    LogLevel = (Logger.LogLevels)API.Settings.LogLevel
+                };
+            }
+        }
+
         private void OnTick(object sender, EventArgs e)
         {
             P = Game.Player.Character;
@@ -123,9 +131,7 @@ namespace RageCoop.Client
             }
             catch (Exception ex)
             {
-#if DEBUG
-                Main.Logger.Error(ex);
-#endif
+                Logger.Error(ex);
             }
 
             if (Networking.ShowNetworkInfo)
@@ -176,99 +182,102 @@ namespace RageCoop.Client
                 MainChat.OnKeyDown(e.KeyCode);
                 return;
             }
-            if (Networking.IsOnServer)
+            if (API.Settings.Interactive)
             {
-                if (Voice.WasInitialized())
+                if (Networking.IsOnServer)
                 {
-                    if (Game.IsControlPressed(GTA.Control.PushToTalk))
+                    if (Voice.WasInitialized())
                     {
-                        Voice.StartRecording();
-                        return;
-                    }
-                    else if (Voice.IsRecording())
-                    {
-                        Voice.StopRecording();
-                        return;
-                    }
-                }
-
-                if (Game.IsControlPressed(GTA.Control.FrontendPause))
-                {
-                    Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
-                    GTA.UI.Hud.IsRadarVisible = false;
-                    return;
-                }
-                if (Game.IsControlPressed(GTA.Control.FrontendPauseAlternate) && API.Settings.DisableAlternatePause)
-                {
-                    Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
-                    GTA.UI.Hud.IsRadarVisible = true;
-                    return;
-                }
-            }
-            if (e.KeyCode == API.Settings.MenuKey && API.Settings.Interactive)
-            {
-                if (CoopMenu.MenuPool.AreAnyVisible)
-                {
-                    CoopMenu.MenuPool.ForEach<LemonUI.Menus.NativeMenu>(x =>
-                    {
-                        if (x.Visible)
+                        if (Game.IsControlPressed(GTA.Control.PushToTalk))
                         {
-                            CoopMenu.LastMenu = x;
-                            x.Visible = false;
+                            Voice.StartRecording();
+                            return;
                         }
-                    });
-                }
-                else
-                {
-                    CoopMenu.LastMenu.Visible = true;
-                }
-            }
-            else if (Game.IsControlJustPressed(GTA.Control.MpTextChatAll))
-            {
-                if (Networking.IsOnServer)
-                {
-                    MainChat.Focused = true;
-                }
-            }
-            else if (MainChat.Focused) { return; }
-            else if (Game.IsControlJustPressed(GTA.Control.MultiplayerInfo))
-            {
-                if (Networking.IsOnServer)
-                {
-                    PlayerList.Request();
-                }
-            }
-            else if (e.KeyCode == API.Settings.PassengerKey)
-            {
-                var P = Game.Player.Character;
+                        else if (Voice.IsRecording())
+                        {
+                            Voice.StopRecording();
+                            return;
+                        }
+                    }
 
-                if (!P.IsInVehicle())
-                {
-                    if (P.IsTaskActive(TaskType.CTaskEnterVehicle))
+                    if (Game.IsControlPressed(GTA.Control.FrontendPause))
                     {
-                        P.Task.ClearAll();
+                        Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
+                        GTA.UI.Hud.IsRadarVisible = false;
+                        return;
+                    }
+                    if (Game.IsControlPressed(GTA.Control.FrontendPauseAlternate) && API.Settings.DisableAlternatePause)
+                    {
+                        Function.Call(Hash.ACTIVATE_FRONTEND_MENU, Function.Call<int>(Hash.GET_HASH_KEY, "FE_MENU_VERSION_SP_PAUSE"), false, 0);
+                        GTA.UI.Hud.IsRadarVisible = true;
+                        return;
+                    }
+                }
+                if (e.KeyCode == API.Settings.MenuKey)
+                {
+                    if (CoopMenu.MenuPool.AreAnyVisible)
+                    {
+                        CoopMenu.MenuPool.ForEach<LemonUI.Menus.NativeMenu>(x =>
+                        {
+                            if (x.Visible)
+                            {
+                                CoopMenu.LastMenu = x;
+                                x.Visible = false;
+                            }
+                        });
                     }
                     else
                     {
-                        var V = World.GetClosestVehicle(P.ReadPosition(), 50);
+                        CoopMenu.LastMenu.Visible = true;
+                    }
+                }
+                else if (Game.IsControlJustPressed(GTA.Control.MpTextChatAll))
+                {
+                    if (Networking.IsOnServer)
+                    {
+                        MainChat.Focused = true;
+                    }
+                }
+                else if (MainChat.Focused) { return; }
+                else if (Game.IsControlJustPressed(GTA.Control.MultiplayerInfo))
+                {
+                    if (Networking.IsOnServer)
+                    {
+                        PlayerList.Request();
+                    }
+                }
+                else if (e.KeyCode == API.Settings.PassengerKey)
+                {
+                    var P = Game.Player.Character;
 
-                        if (V != null)
+                    if (!P.IsInVehicle())
+                    {
+                        if (P.IsTaskActive(TaskType.CTaskEnterVehicle))
                         {
-                            var seat = P.GetNearestSeat(V);
-                            var p = V.GetPedOnSeat(seat);
-                            if (p != null && !p.IsDead)
+                            P.Task.ClearAll();
+                        }
+                        else
+                        {
+                            var V = World.GetClosestVehicle(P.ReadPosition(), 50);
+
+                            if (V != null)
                             {
-                                for (int i = -1; i < V.PassengerCapacity; i++)
+                                var seat = P.GetNearestSeat(V);
+                                var p = V.GetPedOnSeat(seat);
+                                if (p != null && !p.IsDead)
                                 {
-                                    seat = (VehicleSeat)i;
-                                    p = V.GetPedOnSeat(seat);
-                                    if (p == null || p.IsDead)
+                                    for (int i = -1; i < V.PassengerCapacity; i++)
                                     {
-                                        break;
+                                        seat = (VehicleSeat)i;
+                                        p = V.GetPedOnSeat(seat);
+                                        if (p == null || p.IsDead)
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
+                                P.Task.EnterVehicle(V, seat, -1, 5, EnterVehicleFlags.None);
                             }
-                            P.Task.EnterVehicle(V, seat, -1, 5, EnterVehicleFlags.None);
                         }
                     }
                 }

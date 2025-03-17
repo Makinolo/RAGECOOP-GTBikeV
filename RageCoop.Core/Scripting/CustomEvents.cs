@@ -125,7 +125,7 @@ namespace RageCoop.Core.Scripting
             List<object> args = new List<object>();
 
             var myClassType = this.GetType();
-            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                             .Where(m =>
                                     (m.MemberType == MemberTypes.Property || m.MemberType == MemberTypes.Field) &&
                                     !m.GetCustomAttributes(typeof(NoSerialize), false).Any()
@@ -160,7 +160,7 @@ namespace RageCoop.Core.Scripting
         public void FromCustomEventArgs(object[] args)
         {
             var myClassType = this.GetType();
-            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+            var members = myClassType.GetMembers(BindingFlags.Public | BindingFlags.Instance)
                             .Where(m =>
                                     (m.MemberType == MemberTypes.Property || m.MemberType == MemberTypes.Field) &&
                                     !m.GetCustomAttributes(typeof(NoSerialize), false).Any()

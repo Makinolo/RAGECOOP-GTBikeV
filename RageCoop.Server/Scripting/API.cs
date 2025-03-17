@@ -316,7 +316,6 @@ namespace RageCoop.Server.Scripting
             SendCustomEventQueued(clients, CustomEvents.NativeCall, argsList.ToArray());
         }
 
-
         /// <summary>
         /// Send an event and data to the specified clients. Use <see cref="Client.SendCustomEvent(int,object[])"/> if you want to send event to individual client.
         /// </summary>

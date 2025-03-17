@@ -47,7 +47,7 @@ namespace RageCoop.Client
                 catch (Exception ex) { Main.Logger.Error(ex); }
             };
             ShowNetworkInfoItem.CheckboxChanged += (s, e) => { Networking.ShowNetworkInfo = ShowNetworkInfoItem.Checked; };
-            ShowOwnerItem.CheckboxChanged += (s, e) => { API.Settings.ShowEntityOwnerName = ShowOwnerItem.Checked; Util.SaveSettings(); };
+            ShowOwnerItem.CheckboxChanged += (s, e) => { API.Settings.ShowEntityOwnerName = ShowOwnerItem.Checked; API.Settings.Save(); };
             Menu.Add(SimulatedLatencyItem);
             Menu.Add(ShowNetworkInfoItem);
             Menu.Add(ShowOwnerItem);

@@ -99,7 +99,7 @@ namespace RageCoop.Client.Menus
                                 CoopMenu.Menu.Visible = true;
                             }
                             API.Settings.LastServerAddress = address;
-                            Util.SaveSettings();
+                            API.Settings.Save();
                         }
                         catch (Exception ex)
                         {
